@@ -1,5 +1,7 @@
 import moment from 'moment';
 import _ from 'lodash';
+import fs, { StatsBase } from 'fs';
+import path from 'path';
 
 let init_argv = {
   project_uri: undefined,
@@ -7,6 +9,27 @@ let init_argv = {
   output_uri: undefined,
   project_name: undefined,
   log_uri: undefined,
+};
+
+// 需要检测的文件类型
+const Include_File_Type = ['js', 'jsx', 'ts', 'tsx'];
+
+// 排除的文件路径
+const Exculde_Path = ['node_modules'];
+
+export type Type_File_Obj = {
+  /**
+   * 文件路径
+   */
+  uri: string;
+  /**
+   * 文件名
+   */
+  filename: string;
+  /**
+   * 后缀名
+   */
+  extname: string;
 };
 
 // 初始化工具函数
@@ -57,4 +80,45 @@ export function checkParamCompleteAndInit(parse_result) {
     process.exit();
     return;
   }
+}
+
+/**
+ * 生成项目目录下所有需要解析的文件列表
+ * @param project_uri
+ */
+export function getNeedParseFileUriList(project_uri: string) {
+  let dirList = [project_uri];
+  let fileList: Type_File_Obj[] = [];
+  while (dirList.length > 0) {
+    let detectDirectoryPath = dirList.pop();
+    let filenameList = fs.readdirSync(detectDirectoryPath);
+    for (let filename of filenameList) {
+      let filePathUri = path.join(detectDirectoryPath, filename);
+      let stats: StatsBase<number>;
+      try {
+        stats = fs.statSync(filePathUri);
+      } catch (err) {
+        // 报错(文件不存在/无权限)直接退出即可
+        continue;
+      }
+
+      if (stats.isDirectory() && Exculde_Path.includes(filename) === false) {
+        //如果是文件夹, 继续递归查找
+        dirList.push(filePathUri);
+      } else {
+        //不是文件夹,检测文件后缀名, 添加到待检查列表中
+        let extname = path.extname(filename).substring(1).toLowerCase();
+
+        if (Include_File_Type.includes(extname)) {
+          let fileObj: Type_File_Obj = {
+            extname,
+            uri: filePathUri,
+            filename: filename,
+          };
+          fileList.push(fileObj);
+        }
+      }
+    }
+  }
+  return fileList;
 }

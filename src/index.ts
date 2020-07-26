@@ -5,10 +5,8 @@ import fs from 'fs';
 import path from 'path';
 import minimist from 'minimist';
 import { checkParamCompleteAndInit, fileLog, log } from './utils';
+import { getNeedParseFileUriList } from './utils';
 let babel = require('@babel/core');
-
-// 只解析这4种类型的文件
-const fileType = ['js', 'jsx', 'ts', 'tsx'];
 
 export default async function runner() {
   //设置根目录
@@ -26,6 +24,11 @@ export default async function runner() {
     project_name,
     log_uri,
   });
+
+  // 开始处理文件
+  let needDetectFileUriList = getNeedParseFileUriList(project_uri);
+  let totalFileCount = needDetectFileUriList.length;
+  fileLog(`准备进行解析, 共${totalFileCount}个文件`);
 
   fileLog(`所有文件解析完毕`);
 }
