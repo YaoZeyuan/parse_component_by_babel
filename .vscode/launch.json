@@ -13,11 +13,11 @@
       "outFiles": ["${workspaceFolder}/**/*.js"],
       "args": [
         // "--project_uri=/home/yao/www/basic_framework/rank/command/tmp/project",
-        "--project_uri=/home/yao/www/demo_project",
+        "--project_uri=./demo/project",
         "--lib_list_json=[\"antd\",\"antd-mobile\"]",
-        "--output_uri=/home/yao/www/demo.json",
+        "--output_uri=./demo/output/demo.json",
         "--project_name=nts",
-        "--log_uri=/home/yao/www/runtime.log"
+        "--log_uri=./demo/output/runtime.log"
       ]
     }
   ]

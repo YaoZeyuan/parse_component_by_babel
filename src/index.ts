@@ -50,7 +50,7 @@ export default async function runner() {
   // 针对每个文件进行解析
   for (let fileObj of needDetectFileUriList) {
     counter++;
-    await fileParser(fileObj.uri, libList)
+    await fileParser(fileObj.filename, fileObj.uri, libList)
       .then((parseResult) => {
         parseResultList.push(parseResult);
         successCounter++;
@@ -91,4 +91,34 @@ export default async function runner() {
   fileLog(`所有文件解析完毕`);
 }
 
-async function fileParser(fileUri: string, libList: string[]) {}
+async function fileParser(filename: string, fileUri: string, libList: string[]) {
+  const fileContent = fs.readFileSync(fileUri, { encoding: 'utf8' });
+  // 首先使用babel转义, 将ts/jsx/es6代码转译成标准es5代码
+  let es5Code = babel.transformSync(fileContent, {
+    filename,
+    presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-flow'],
+    plugins: [
+      ['@babel/plugin-proposal-decorators', { legacy: true }],
+      ['@babel/plugin-proposal-class-properties', { loose: true }],
+      '@babel/plugin-transform-destructuring',
+      '@babel/plugin-syntax-dynamic-import',
+      '@babel/plugin-proposal-export-default-from',
+    ],
+  }).code;
+  // 然后对转义后代码进行解析
+  let summaryResult = new Map();
+  babel.transformSync(es5Code, {
+    plugins: [
+      [
+        // 调用自定义babel组件进行解析
+        './src/analysis.js',
+        {
+          input: libList,
+          output: [],
+          summaryResult: summaryResult,
+        },
+      ],
+    ],
+  });
+  return summaryResult;
+}
