@@ -17,6 +17,85 @@ type TypeParseError = {
   };
 };
 
+/*******************汇报数据******************/
+
+/**
+ * ui lib 使用次数
+ */
+type TypeUiLibReport = {
+  /**
+   * 组件库名
+   */
+  libName: string;
+  /**
+   * 组件库内组件累计被使用次数
+   */
+  totalUseCount: number;
+
+  /**
+   * 组件库内列表
+   */
+  compontentDetailList: TypeCompontentReport[];
+};
+
+/**
+ * 组件使用次数
+ */
+type TypeCompontentReport = {
+  /**
+   * 组件名
+   */
+  compontentName: string;
+  /**
+   * 组件被使用次数
+   */
+  useCount: number;
+};
+
+/*******************分析时的中间数据******************/
+/**
+ * 组件库统计详情
+ */
+type TypeCacheSummary = Map<string, TypeCacheUiLib>;
+
+type TypeCacheUiLib = {
+  /**
+   * 组件库名
+   */
+  uiLibName: string;
+  /**
+   * 组件库别名
+   */
+  aliasNameSet: Set<string>;
+  /**
+   * 组件库内, 子组件列表
+   */
+  compontentMap: Map<string, TypeCacheCompontent>;
+};
+/**
+ * 组件缓存名
+ */
+type TypeCacheCompontent = {
+  /**
+   * 组件名
+   */
+  compontentName: string;
+  /**
+   * 组件别名列表. 只统计第一级组件, 由组件解构出的组件和进一步解构出的组件都视为该组件
+   * 示例:
+   * import { Form } from "antd"
+   * let Item = Form.Item
+   * let ItemProps =  Item.Props
+   *
+   * Item/ItemProps都计入Form组件的使用频次
+   */
+  aliasNameSet: Set<string>;
+  /**
+   * 总使用次数
+   */
+  useCount: number;
+};
+
 export default async function runner() {
   //设置根目录
   let parse_result = minimist(process.argv.slice(2));
@@ -106,7 +185,7 @@ async function fileParser(filename: string, fileUri: string, libList: string[]) 
     ],
   }).code;
   // 然后对转义后代码进行解析
-  let summaryResult = new Map();
+  let summaryResult: TypeCacheSummary = new Map();
   babel.transformSync(es5Code, {
     plugins: [
       [
