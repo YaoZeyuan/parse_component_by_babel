@@ -253,6 +253,14 @@ class UiLibSummary {
     }
     this.directUseSummary.set(fileUri, oldUseCount + 1);
   }
+
+  /**
+   * 检查是否是注册过的组件名
+   * @param testName
+   */
+  isRegistedCompontentName(testName: string) {
+    return this.isCompontentNameRegisted(testName);
+  }
 }
 
 export class Summary {
@@ -419,6 +427,40 @@ export class Summary {
 
     // 将结果设置回uiLibSummary
     this.uiLibSummary.set(realUiLibName, uiLibSumamry);
+  }
+
+  /**
+   * 检查是否是注册过的组件库名
+   * @param targetName
+   */
+  isRegistedUiLibName(targetName: string) {
+    return this.isUiLibNameRegisted(targetName);
+  }
+
+  /**
+   * 检查是否是注册过的组件名
+   * @param targetName
+   */
+  isRegistedCompontentName(targetName: string) {
+    for (let uiLib of this.uiLibSummary.values()) {
+      if (uiLib.isRegistedCompontentName(targetName) === true) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 检查是否是注册过的组件名
+   * @param targetName
+   */
+  getCompontentNameBelongToUiLib(targetName: string) {
+    for (let uiLib of this.uiLibSummary.values()) {
+      if (uiLib.isRegistedCompontentName(targetName) === true) {
+        return uiLib.name;
+      }
+    }
+    return;
   }
 }
 
