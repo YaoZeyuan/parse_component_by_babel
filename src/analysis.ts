@@ -4,6 +4,7 @@ import {
   Identifier,
   StringLiteral,
   MemberExpression,
+  CallExpression,
 } from '@babel/types';
 import { types as babelTypes } from '@babel/core';
 import { Summary } from './index';
@@ -272,6 +273,96 @@ export default function (opts) {
           }
         }
 
+        // 重新把值设回去
+        state.opts.summaryResult = summaryDb;
+      },
+      // 处理调用语句(统计组件实际被使用次数)
+      CallExpression({ node }: { node: CallExpression }, state) {
+        let summaryDb = state.opts.summaryResult as Summary;
+        let calleeItem = node.callee as MemberExpression;
+
+        // 统计组件库内函数调用
+        // 被调用的有三种可能
+        // 1. 直接调用:
+        //    1.1 组件库  antd()
+        //    1.2 组件函数  Model()
+        // 2. 间接调用
+        //    2.1  组件渲染调用 React.CreateCompontent(...)
+        //    2.2  组件库内函数 antd.Model()
+        //    2.3  组件的子函数 Model.loading()
+        //    2.4  执行结果的子函数 antd().loading() / Model().loading()
+        // 3. 其他情况(不考虑)
+        //    3.1  链式调用 antd.Model.loading()
+        //    3.2  链式调用 antd().Model().loading()
+        //    3.3  链式调用会被解析为多个直接/间接调用, 不需要考虑
+
+        if (babelTypes.isIdentifier(calleeItem)) {
+          // 第一种情况, 直接调用
+          let calleeItemName = (calleeItem as Identifier).name;
+
+          let isRegistedUiLibName = summaryDb.isRegistedUiLibName(calleeItemName);
+          let isRegistedCompontentName = summaryDb.isRegistedCompontentName(calleeItemName);
+
+          if (isRegistedCompontentName === false && isRegistedUiLibName === false) {
+            // 未注册过, 直接返回即可
+            return;
+          }
+          if (isRegistedUiLibName) {
+            // 组件库使用次数+1
+            summaryDb.incrUiLibUseCount(calleeItemName);
+          } else {
+            // 组件使用次数+1
+            let 原组件隶属的_组件库名 = summaryDb.getCompontentNameBelongToUiLib(calleeItemName);
+            summaryDb.incrCompontentUseCount(原组件隶属的_组件库名, calleeItemName);
+          }
+        } else if (babelTypes.isMemberExpression(calleeItem)) {
+          // 第二种情况, 子组件作为属性进行调用
+          if (babelTypes.isCallExpression(calleeItem.object)) {
+            // 形如message().loading()
+            // 在这种案例中, message本身会被计数, 因此不在考虑后续loading的计数
+            // 在多数情况下, loading都是message下的子组件, 不需要被统计
+          } else {
+            // 形如antd.message()
+            let objectItem = calleeItem.object as Identifier;
+            let propertyItem = calleeItem.property as Identifier;
+            let 调用对象 = objectItem.name;
+            let 调用方法 = propertyItem.name;
+
+            // 检查是否为React.createElement()
+            if (调用对象 === 'React' && 调用方法 === 'createElement') {
+              if (node.arguments.length > 0) {
+                // 只统计有参数的
+                // 真正被调取的元素
+                let callCompontentItem = node.arguments[0] as Identifier;
+
+                let compontentName = callCompontentItem.name;
+                // 此时被调取的一定是组件了
+                // 没被注册过的组件说明不是目标组件库成员, 不用考虑
+                if (summaryDb.isRegistedCompontentName(compontentName)) {
+                  // 该组件曾经注册过
+                  let uiLibName = summaryDb.getCompontentNameBelongToUiLib(compontentName);
+                  summaryDb.incrCompontentUseCount(uiLibName, compontentName);
+                }
+              }
+            } else {
+              let isRegistedUiLibName = summaryDb.isRegistedUiLibName(调用对象);
+              let isRegistedCompontentName = summaryDb.isRegistedCompontentName(调用对象);
+              if (isRegistedUiLibName) {
+                // 作为组件库的子组件被调用
+                summaryDb.incrCompontentUseCount(调用对象, 调用方法);
+              }
+              if (isRegistedCompontentName) {
+                // 作为组件被调用
+                let uiLibName = summaryDb.getCompontentNameBelongToUiLib(调用对象);
+                summaryDb.incrCompontentUseCount(uiLibName, 调用对象);
+              }
+            }
+            // 没有其他情况
+          }
+        } else {
+          // 3. 其他情况(不考虑)
+          //    3.1  链式调用 antd.Model.loading()
+        }
         // 重新把值设回去
         state.opts.summaryResult = summaryDb;
       },
