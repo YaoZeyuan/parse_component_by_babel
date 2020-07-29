@@ -122,3 +122,68 @@ export function getNeedParseFileUriList(project_uri: string) {
   }
   return fileList;
 }
+
+/**
+ * 判断导入目标是否为合法值(过滤非js/jsx/ts/tsx和非空后缀的导入)
+ * @param importPath
+ */
+export function isLegalTarget(importPath: string) {
+  let importPathList = importPath.split('/');
+  let lastItem = importPathList.pop();
+  if (lastItem.includes('.')) {
+    // 类似于@ke/hello/a.less, @ke/hello/a.js
+    // 直接判断后缀是否是合法js后缀
+    let splitList = lastItem.split('.');
+    let prefix = splitList.pop();
+    switch (prefix) {
+      case 'js':
+      case 'jsx':
+      case 'ts':
+      case 'tsx':
+        return true;
+      default:
+        return false;
+    }
+  } else {
+    // 不包含., 一定是目标导入
+    return true;
+  }
+}
+
+/**
+ * 获取模块名
+ * @param importPath
+ */
+export function getPackageName(importPath: string) {
+  if (importPath.startsWith('@')) {
+    // 如果是@开头, 模块名为 @ke/xxx
+    // 只取前两位
+    let targetList = importPath.split('/').slice(0, 2);
+    let targetLibName = targetList.join('/');
+    return targetLibName;
+  } else {
+    // 如果非@开头, 模块名为 xxx
+    let targetList = importPath.split('/');
+    let targetLibName = targetList[0];
+    return targetLibName;
+  }
+}
+
+/**
+ * 获取组件名
+ * @param importPath
+ */
+export function getCompontentName(importPath: string) {
+  let moduleName = getPackageName(importPath);
+  let remainPath = importPath.replace(moduleName, '');
+  // 去除一开始的/
+  remainPath = remainPath.replace(/^\//, '');
+  // 去除index.jsx后缀
+  remainPath = remainPath.replace(/index.js$/, '');
+  remainPath = remainPath.replace(/index.jsx$/, '');
+  remainPath = remainPath.replace(/index.ts$/, '');
+  remainPath = remainPath.replace(/index.tsx$/, '');
+  remainPath = remainPath.replace(/index$/, '');
+  remainPath = remainPath.replace(/\/$/, '');
+  return remainPath;
+}
