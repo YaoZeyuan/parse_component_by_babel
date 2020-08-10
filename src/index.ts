@@ -531,7 +531,8 @@ export default async function runner() {
       });
   }
 
-  // 将解析结果记录到数据库中
+  // 将解析结果记录到文件中
+  fs.writeFileSync(output_uri, JSON.stringify(parseResultList, null, 4));
 
   // 输出数据库
 
