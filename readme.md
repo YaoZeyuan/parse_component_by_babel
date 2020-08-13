@@ -16,3 +16,10 @@ node index.js \
 --project_name="hello_world"        \
 --log_uri='/home/yao/www/test/demo_project/log.log'
 ```
+
+# todo
+
+- [ ] 将组件库统计改为 npm 包统计
+- [ ] 拆分代码, 将代码规范化
+- [ ] 移除最外层的 index.ts, 此为冗余文件
+- [ ] 编写使用说明
