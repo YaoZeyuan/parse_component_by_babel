@@ -27,11 +27,23 @@ type TypeUiLibReport = {
    * 组件库名
    */
   libName: string;
+
+  /**
+   * 组件库被直接使用次数
+   */
+  directUseCount: number;
+  /**
+   * 按文件统计组件库被直接使用次数
+   */
+  useFileUriList: {
+    uri: string;
+    count: number;
+  }[];
+
   /**
    * 组件库内组件累计被使用次数
    */
-  totalUseCount: number;
-
+  compontentUseCount: number;
   /**
    * 组件库内列表
    */
@@ -50,13 +62,16 @@ type TypeCompontentReport = {
    * 组件被使用次数
    */
   useCount: number;
+  /**
+   * 按文件统计组件被使用次数
+   */
+  useFileUriList: {
+    uri: string;
+    count: number;
+  }[];
 };
 
 /*******************分析时的中间数据******************/
-/**
- * 组件库统计详情
- */
-type TypeCacheSummary = Map<string, TypeCacheUiLib>;
 
 type TypeCacheUiLib = {
   /**
@@ -533,39 +548,36 @@ class SummaryMergeTool {
     }
   }
 
-  public toJson() {
-    let resultList = [];
+  public toJson(): TypeUiLibReport[] {
+    let resultList: TypeUiLibReport[] = [];
     if (this.summary.size === 0) {
       return resultList;
     }
     for (let rawUiLib of this.summary.values()) {
-      rawUiLib.directUseCount;
-      rawUiLib.directUseFileUriMap;
-
-      let directUseFileUriList = [];
+      let directUseFileUriList: TypeUiLibReport['useFileUriList'] = [];
       for (let fileUri of rawUiLib.directUseFileUriMap.keys()) {
         directUseFileUriList.push({
           uri: fileUri,
-          useCount: rawUiLib.directUseFileUriMap.get(fileUri),
+          count: rawUiLib.directUseFileUriMap.get(fileUri),
         });
       }
       // 排序
       directUseFileUriList.sort((a, b) => {
-        return a.useCount - b.useCount;
+        return a.count - b.count;
       });
 
-      let compontentUseList = [];
+      let compontentUseList: TypeCompontentReport[] = [];
       for (let rawCompontent of rawUiLib.compontentMap.values()) {
-        let useFileUriList = [];
+        let useFileUriList: TypeCompontentReport['useFileUriList'] = [];
         for (let fileUri of rawCompontent.fileUriMap.keys()) {
           useFileUriList.push({
             uri: fileUri,
-            useCount: rawUiLib.directUseFileUriMap.get(fileUri),
+            count: rawUiLib.directUseFileUriMap.get(fileUri),
           });
         }
         // 排序
         useFileUriList.sort((a, b) => {
-          return a.useCount - b.useCount;
+          return a.count - b.count;
         });
 
         compontentUseList.push({
@@ -578,16 +590,19 @@ class SummaryMergeTool {
         return a.useCount - b.useCount;
       });
 
-      let uiLib = {
-        uiLibName: rawUiLib.uiLibName,
+      let uiLib: TypeUiLibReport = {
+        libName: rawUiLib.uiLibName,
         directUseCount: rawUiLib.directUseCount,
-        directUseFileUriList,
+        useFileUriList: directUseFileUriList,
+        compontentDetailList: compontentUseList,
         compontentUseCount: rawUiLib.compontentUseCount,
-        compontentUseList,
       };
-
       resultList.push(uiLib);
     }
+    // 排序
+    resultList.sort((a, b) => {
+      return a.compontentUseCount - b.compontentUseCount;
+    });
     return resultList;
   }
 }
