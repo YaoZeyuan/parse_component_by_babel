@@ -63,10 +63,21 @@ type TypeCacheUiLib = {
    * 组件库名
    */
   uiLibName: string;
+
   /**
-   * 组件库别名
+   * 组件库本身被直接使用次数
    */
-  aliasNameSet: Set<string>;
+  directUseCount: number;
+  /**
+   * 统计文件内使用次数.
+   * fileUri -> useCount
+   */
+  directUseFileUriMap: Map<string, number>;
+
+  /**
+   * 组件库内组件总被使用次数
+   */
+  compontentUseCount: number;
   /**
    * 组件库内, 子组件列表
    */
@@ -80,16 +91,6 @@ type TypeCacheCompontent = {
    * 组件名
    */
   compontentName: string;
-  /**
-   * 组件别名列表. 只统计第一级组件, 由组件解构出的组件和进一步解构出的组件都视为该组件
-   * 示例:
-   * import { Form } from "antd"
-   * let Item = Form.Item
-   * let ItemProps =  Item.Props
-   *
-   * Item/ItemProps都计入Form组件的使用频次
-   */
-  aliasNameSet: Set<string>;
   /**
    * 总使用次数
    */
@@ -464,6 +465,133 @@ export class Summary {
   }
 }
 
+class SummaryMergeTool {
+  private summary: Map<string, TypeCacheUiLib> = new Map();
+
+  public addSummary(target: Summary) {
+    for (let rawUiLibDetail of target.uiLibSummary.values()) {
+      let uiLibName = rawUiLibDetail.name;
+      let storeItem: TypeCacheUiLib = {
+        uiLibName: uiLibName,
+        directUseFileUriMap: new Map(),
+        directUseCount: 0,
+        compontentUseCount: 0,
+        compontentMap: new Map(),
+      };
+      if (this.summary.has(uiLibName)) {
+        storeItem = this.summary.get(uiLibName);
+      }
+
+      // 开始合并
+
+      // 首先合并直接使用次数
+      for (let fileUri of rawUiLibDetail.directUseSummary.keys()) {
+        let useCount = rawUiLibDetail.directUseSummary.get(fileUri);
+        storeItem.directUseFileUriMap.set(fileUri, useCount);
+      }
+      // 更新直接使用次数
+      let directUseCount = 0;
+      for (let fileUri of storeItem.directUseFileUriMap.keys()) {
+        let useCount = storeItem.directUseFileUriMap.get(fileUri);
+        directUseCount += useCount;
+      }
+      storeItem.directUseCount = directUseCount;
+
+      // 其次合并各个组件的使用频率
+      for (let rawCompontentDetail of rawUiLibDetail.compontentSummary.values()) {
+        let compontentName = rawCompontentDetail.name;
+        let compontentUseDetail: TypeCacheCompontent = {
+          compontentName: compontentName,
+          useCount: 0,
+          fileUriMap: new Map(),
+        };
+        if (storeItem.compontentMap.has(compontentName)) {
+          compontentUseDetail = storeItem.compontentMap.get(compontentName);
+        }
+
+        // 记录组件在文件中的使用次数
+        for (let fileUri of rawCompontentDetail.useSummary.keys()) {
+          let useCount = rawCompontentDetail.useSummary.get(fileUri);
+          compontentUseDetail.fileUriMap.set(fileUri, useCount);
+        }
+        let compontentUseCount = 0;
+        for (let subUseCount of compontentUseDetail.fileUriMap.values()) {
+          compontentUseCount += subUseCount;
+        }
+        compontentUseDetail.useCount = compontentUseCount;
+        storeItem.compontentMap.set(compontentName, compontentUseDetail);
+      }
+      // 更新store内总的组件使用次数
+      let compontentTotalUseCount = 0;
+      for (let compontentUseDetail of storeItem.compontentMap.values()) {
+        compontentTotalUseCount += compontentUseDetail.useCount;
+      }
+      storeItem.compontentUseCount = compontentTotalUseCount;
+
+      // 将数据更新回去
+      this.summary.set(storeItem.uiLibName, storeItem);
+    }
+  }
+
+  public toJson() {
+    let resultList = [];
+    if (this.summary.size === 0) {
+      return resultList;
+    }
+    for (let rawUiLib of this.summary.values()) {
+      rawUiLib.directUseCount;
+      rawUiLib.directUseFileUriMap;
+
+      let directUseFileUriList = [];
+      for (let fileUri of rawUiLib.directUseFileUriMap.keys()) {
+        directUseFileUriList.push({
+          uri: fileUri,
+          useCount: rawUiLib.directUseFileUriMap.get(fileUri),
+        });
+      }
+      // 排序
+      directUseFileUriList.sort((a, b) => {
+        return a.useCount - b.useCount;
+      });
+
+      let compontentUseList = [];
+      for (let rawCompontent of rawUiLib.compontentMap.values()) {
+        let useFileUriList = [];
+        for (let fileUri of rawCompontent.fileUriMap.keys()) {
+          useFileUriList.push({
+            uri: fileUri,
+            useCount: rawUiLib.directUseFileUriMap.get(fileUri),
+          });
+        }
+        // 排序
+        useFileUriList.sort((a, b) => {
+          return a.useCount - b.useCount;
+        });
+
+        compontentUseList.push({
+          compontentName: rawCompontent.compontentName,
+          useCount: rawCompontent.useCount,
+          useFileUriList: useFileUriList,
+        });
+      }
+      compontentUseList.sort((a, b) => {
+        return a.useCount - b.useCount;
+      });
+
+      let uiLib = {
+        uiLibName: rawUiLib.uiLibName,
+        directUseCount: rawUiLib.directUseCount,
+        directUseFileUriList,
+        compontentUseCount: rawUiLib.compontentUseCount,
+        compontentUseList,
+      };
+
+      resultList.push(uiLib);
+    }
+    return resultList;
+  }
+}
+
 export default async function runner() {
   //设置根目录
   let parse_result = minimist(process.argv.slice(2));
@@ -492,13 +620,15 @@ export default async function runner() {
   let successCounter = 0;
   let parseFailedList = [];
   let parseResultList = [];
+  let summaryMergeTool = new SummaryMergeTool();
 
   fileLog(`准备进行解析, 共${totalFileCount}个文件`);
   // 针对每个文件进行解析
   for (let fileObj of needDetectFileUriList) {
     counter++;
     await fileParser(fileObj.filename, fileObj.uri, libList)
-      .then((parseResult) => {
+      .then((parseResult: Summary) => {
+        summaryMergeTool.addSummary(parseResult);
         parseResultList.push(parseResult);
         successCounter++;
         log(`${fileObj.uri}解析完毕`);
@@ -532,7 +662,7 @@ export default async function runner() {
   }
 
   // 将解析结果记录到文件中
-  fs.writeFileSync(output_uri, JSON.stringify(parseResultList, null, 4));
+  fs.writeFileSync(output_uri, JSON.stringify(summaryMergeTool.toJson(), null, 4));
 
   // 输出数据库
 
@@ -554,7 +684,7 @@ async function fileParser(filename: string, fileUri: string, libList: string[]) 
     ],
   }).code;
   // 然后对转义后代码进行解析
-  let summaryResult: TypeCacheSummary = new Map();
+  let summaryResult = new Summary(fileUri);
   babel.transformSync(es5Code, {
     plugins: [
       [
@@ -563,7 +693,7 @@ async function fileParser(filename: string, fileUri: string, libList: string[]) 
         {
           input: libList,
           output: [],
-          summaryResult: new Summary(fileUri),
+          summaryResult: summaryResult,
         },
       ],
     ],
