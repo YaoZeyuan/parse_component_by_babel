@@ -607,7 +607,39 @@ class SummaryMergeTool {
   }
 }
 
-export default async function runner() {
+async function fileParser(filename: string, fileUri: string, libList: string[]) {
+  const fileContent = fs.readFileSync(fileUri, { encoding: 'utf8' });
+  // 首先使用babel转义, 将ts/jsx/es6代码转译成标准es5代码
+  let es5Code = babel.transformSync(fileContent, {
+    filename,
+    presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-flow'],
+    plugins: [
+      ['@babel/plugin-proposal-decorators', { legacy: true }],
+      ['@babel/plugin-proposal-class-properties', { loose: true }],
+      '@babel/plugin-transform-destructuring',
+      '@babel/plugin-syntax-dynamic-import',
+      '@babel/plugin-proposal-export-default-from',
+    ],
+  }).code;
+  // 然后对转义后代码进行解析
+  let summaryResult = new Summary(fileUri);
+  babel.transformSync(es5Code, {
+    plugins: [
+      [
+        // 调用自定义babel组件进行解析
+        './src/analysis.js',
+        {
+          input: libList,
+          output: [],
+          summaryResult: summaryResult,
+        },
+      ],
+    ],
+  });
+  return summaryResult;
+}
+
+async function runner() {
   //设置根目录
   let parse_result = minimist(process.argv.slice(2));
   // 将parse_result中的值赋予公共变量, 方便调用
@@ -684,34 +716,5 @@ export default async function runner() {
   fileLog(`所有文件解析完毕`);
 }
 
-async function fileParser(filename: string, fileUri: string, libList: string[]) {
-  const fileContent = fs.readFileSync(fileUri, { encoding: 'utf8' });
-  // 首先使用babel转义, 将ts/jsx/es6代码转译成标准es5代码
-  let es5Code = babel.transformSync(fileContent, {
-    filename,
-    presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-flow'],
-    plugins: [
-      ['@babel/plugin-proposal-decorators', { legacy: true }],
-      ['@babel/plugin-proposal-class-properties', { loose: true }],
-      '@babel/plugin-transform-destructuring',
-      '@babel/plugin-syntax-dynamic-import',
-      '@babel/plugin-proposal-export-default-from',
-    ],
-  }).code;
-  // 然后对转义后代码进行解析
-  let summaryResult = new Summary(fileUri);
-  babel.transformSync(es5Code, {
-    plugins: [
-      [
-        // 调用自定义babel组件进行解析
-        './src/analysis.js',
-        {
-          input: libList,
-          output: [],
-          summaryResult: summaryResult,
-        },
-      ],
-    ],
-  });
-  return summaryResult;
-}
+// 启动解析器
+runner();
