@@ -106,6 +106,11 @@ export function getNeedParseFileUriList(project_uri: string) {
         //如果是文件夹, 继续递归查找
         dirList.push(filePathUri);
       } else {
+        if (stats.isFile() === false) {
+          // 不考虑非文件类型
+          continue;
+        }
+
         //不是文件夹,检测文件后缀名, 添加到待检查列表中
         let extname = path.extname(filename).substring(1).toLowerCase();
 

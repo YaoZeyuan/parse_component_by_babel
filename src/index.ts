@@ -1,121 +1,12 @@
 import '@babel/polyfill';
-import moment from 'moment';
 import _ from 'lodash';
 import fs from 'fs';
-import path from 'path';
 import minimist from 'minimist';
 import { checkParamCompleteAndInit, fileLog, log } from './utils';
 import { getNeedParseFileUriList } from './utils';
+import { TypeUiLibReport, TypeCompontentReport } from './summary';
+import { TypeCacheUiLib, TypeCacheCompontent, TypeParseError } from './collection';
 let babel = require('@babel/core');
-
-type TypeParseError = {
-  uri: string;
-  errorInfo: {
-    name: string;
-    message: string;
-    stack: string;
-  };
-};
-
-/*******************汇报数据******************/
-
-/**
- * ui lib 使用次数
- */
-type TypeUiLibReport = {
-  /**
-   * 组件库名
-   */
-  libName: string;
-
-  /**
-   * 组件库被直接使用次数
-   */
-  directUseCount: number;
-  /**
-   * 按文件统计组件库被直接使用次数
-   */
-  useFileUriList: {
-    uri: string;
-    count: number;
-  }[];
-
-  /**
-   * 组件库内组件累计被使用次数
-   */
-  compontentUseCount: number;
-  /**
-   * 组件库内列表
-   */
-  compontentDetailList: TypeCompontentReport[];
-};
-
-/**
- * 组件使用次数
- */
-type TypeCompontentReport = {
-  /**
-   * 组件名
-   */
-  compontentName: string;
-  /**
-   * 组件被使用次数
-   */
-  useCount: number;
-  /**
-   * 按文件统计组件被使用次数
-   */
-  useFileUriList: {
-    uri: string;
-    count: number;
-  }[];
-};
-
-/*******************分析时的中间数据******************/
-
-type TypeCacheUiLib = {
-  /**
-   * 组件库名
-   */
-  uiLibName: string;
-
-  /**
-   * 组件库本身被直接使用次数
-   */
-  directUseCount: number;
-  /**
-   * 统计文件内使用次数.
-   * fileUri -> useCount
-   */
-  directUseFileUriMap: Map<string, number>;
-
-  /**
-   * 组件库内组件总被使用次数
-   */
-  compontentUseCount: number;
-  /**
-   * 组件库内, 子组件列表
-   */
-  compontentMap: Map<string, TypeCacheCompontent>;
-};
-/**
- * 组件缓存名
- */
-type TypeCacheCompontent = {
-  /**
-   * 组件名
-   */
-  compontentName: string;
-  /**
-   * 总使用次数
-   */
-  useCount: number;
-  /**
-   * 统计文件内使用次数.
-   * fileUri -> useCount
-   */
-  fileUriMap: Map<string, number>;
-};
 
 class CompontentSummary {
   name: string;
@@ -279,7 +170,7 @@ class UiLibSummary {
   }
 }
 
-export class Summary {
+class Summary {
   /**
    * 基本假设
    * 同一文件内, uiLib之间别名不会重复, 组件之间别名不会重复, (uiLib和compontent的别名可以重复)
