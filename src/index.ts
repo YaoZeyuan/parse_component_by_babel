@@ -1,5 +1,6 @@
 import '@babel/polyfill';
 import _ from 'lodash';
+import path from 'path';
 import fs from 'fs';
 import minimist from 'minimist';
 import { checkParamCompleteAndInit, fileLog, log } from './utils';
@@ -498,8 +499,10 @@ class SummaryMergeTool {
   }
 }
 
-async function fileParser(filename: string, fileUri: string, libList: string[]) {
+async function fileParser(fileUri: string, libList: string[]) {
   const fileContent = fs.readFileSync(fileUri, { encoding: 'utf8' });
+  const parseResult = path.parse(fileUri);
+  const filename = parseResult.base;
   // 首先使用babel转义, 将ts/jsx/es6代码转译成标准es5代码
   let es5Code = babel.transformSync(fileContent, {
     filename,
@@ -564,39 +567,34 @@ async function runner() {
   // 针对每个文件进行解析
   for (let fileObj of needDetectFileUriList) {
     counter++;
-    await fileParser(fileObj.filename, fileObj.uri, libList)
-      .then((parseResult: Summary) => {
-        summaryMergeTool.addSummary(parseResult);
-        parseResultList.push(parseResult);
-        successCounter++;
-        log(`${fileObj.uri}解析完毕`);
-        log(
-          `第${counter}/${totalFileCount}个文件解析成功, 目前解析成功${successCounter}, 失败${failedCounter}`,
-        );
-      })
-      .catch((err: Error) => {
-        let errorInfo: TypeParseError = {
-          uri: fileObj.uri,
-          errorInfo: {
-            name: err.name,
-            message: err.message,
-            stack: err.stack,
-          },
-        };
-
-        // 更新数据
-        failedCounter++;
-        parseFailedList.push(errorInfo);
-
-        fileLog(
-          `第${counter}/${totalFileCount}个文件解析失败, ${fileObj.uri}解析失败, 目前解析成功${successCounter}, 失败${failedCounter}`,
-        );
-        fileLog('失败原因=>', {
+    let parseResult: Summary | undefined = await fileParser(fileObj.uri, libList).catch((err: Error) => {
+      let errorInfo: TypeParseError = {
+        uri: fileObj.uri,
+        errorInfo: {
           name: err.name,
           message: err.message,
           stack: err.stack,
-        });
-      });
+        },
+      };
+
+      // 更新数据
+      failedCounter++;
+      parseFailedList.push(errorInfo);
+
+      fileLog(`第${counter}/${totalFileCount}个文件${fileObj.uri}解析失败, 目前解析失败${failedCounter}个`);
+      fileLog('失败原因=>', errorInfo.errorInfo);
+      return undefined;
+    });
+    if (parseResult === undefined) {
+      continue;
+    }
+
+    // 解析成功
+    summaryMergeTool.addSummary(parseResult);
+    parseResultList.push(parseResult);
+    successCounter++;
+    log(`${fileObj.uri}解析完毕`);
+    log(`第${counter}/${totalFileCount}个文件解析成功, 目前解析成功${successCounter}, 失败${failedCounter}`);
   }
 
   // 将解析结果记录到文件中
