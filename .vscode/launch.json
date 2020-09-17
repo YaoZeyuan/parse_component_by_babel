@@ -9,8 +9,8 @@
       "request": "launch",
       "name": "启动程序-linux",
       "skipFiles": ["<node_internals>/**"],
-      "program": "${workspaceFolder}/index.js",
-      "outFiles": ["${workspaceFolder}/**/*.js"],
+      "program": "${workspaceFolder}/dist/index.js",
+      "outFiles": ["${workspaceFolder}/src/*.js"],
       "args": [
         // "--project_uri=/home/yao/www/basic_framework/rank/command/tmp/project",
         "--project_uri=./demo/project",

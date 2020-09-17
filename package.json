@@ -2,11 +2,11 @@
   "name": "parse_compontent_by_babel",
   "version": "0.0.1",
   "description": "利用 babel 统计 node 项目中组件使用情况, 输出为json文件",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "build": "babel src --config-file=./env/.babelrc --copy-files --out-dir src  --verbose --source-maps --extensions \".ts,.tsx\"",
-    "watch": "babel src --config-file=./env/.babelrc --copy-files --watch --out-dir src  --verbose --source-maps --extensions \".ts,.tsx\"",
-    "start": "node src/index.js"
+    "build": "babel src --config-file=./env/.babelrc --copy-files --out-dir dist  --verbose --source-maps --extensions \".ts,.tsx\"",
+    "watch": "babel src --config-file=./env/.babelrc --copy-files --watch --out-dir dist  --verbose --source-maps --extensions \".ts,.tsx\"",
+    "start": "node dist/index.js"
   },
   "author": "yaozeyuan93@gmail.com",
   "license": "ISC",
