@@ -87,6 +87,7 @@ async function startAnalyze() {
   // 针对每个文件进行解析
   for (let fileObj of needDetectFileUriList) {
     counter++;
+    // @todo 这里应该叫 analyzeResult 更合适
     let summaryResult: Summary | undefined = await fileParser(fileObj.uri, libList).catch((err: Error) => {
       let errorInfo: TypeParseError = {
         uri: fileObj.uri,
