@@ -90,8 +90,17 @@ class UsedCompontent {
  * 使用的组件库
  */
 class UsedLib {
+  /**
+   * npm包名
+   */
   name: string;
+  /**
+   * 导入npm包后, 引入的别名
+   * 例如:
+   * import * as K from 'lodash', 此时K即为lodash的别名
+   */
   aliasNameSet: Set<string>;
+
   /**
    * 组件库本身也可能被直接使用
    * fileUri => useCount
@@ -172,13 +181,13 @@ class UsedLib {
       let realCompontentName = this.getRealCompontentName(compontentName);
       this.registCompontentNameAndAliasName(realCompontentName, compontentAliasName);
       return;
-    } else {
-      // 组件未注册, 先注册组件
-      this.addCompontent(compontentName);
-      // 再注册组件别名
-      this.registCompontentNameAndAliasName(compontentName, compontentAliasName);
-      return;
     }
+
+    // 组件未注册, 先注册组件
+    this.addCompontent(compontentName);
+    // 再注册组件别名
+    this.registCompontentNameAndAliasName(compontentName, compontentAliasName);
+    return;
   }
 
   /**
@@ -199,12 +208,12 @@ class UsedLib {
   }
 
   /**
-   * compontent在fileUri中使用数+1
+   * lib在fileUri中使用数+1
    *
    * @param compontentName
    * @param fileUri
    */
-  incrUiLibUseCount(fileUri: string) {
+  incrLibUseCount(fileUri: string) {
     let oldUseCount = 0;
     if (this.directUseSummary.has(fileUri)) {
       oldUseCount = this.directUseSummary.get(fileUri);
@@ -385,7 +394,7 @@ export class UsedSummaryInFile {
     // 向uiLib中添加组件别名
     let realLibName = this.getRealLibName(libName);
     let libUsedSumamry = this.usedLib.get(realLibName);
-    libUsedSumamry.incrUiLibUseCount(this.fileUri);
+    libUsedSumamry.incrLibUseCount(this.fileUri);
 
     // 将结果设置回uiLibSummary
     this.usedLib.set(realLibName, libUsedSumamry);
