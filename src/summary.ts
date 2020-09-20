@@ -304,11 +304,11 @@ export class UsedSummaryInFile {
       // 再注册别名
       this.registLibNameAndAliasName(realUiLibName, aliasName);
       return;
-    } else {
-      // 组件库不存在, 先注册组件库, 再注册组件别名
-      this.addLib(libName);
-      this.registLibNameAndAliasName(libName, aliasName);
     }
+
+    // 组件库不存在, 先注册组件库, 再注册组件别名
+    this.addLib(libName);
+    this.registLibNameAndAliasName(libName, aliasName);
   }
 
   /**
@@ -365,18 +365,18 @@ export class UsedSummaryInFile {
 
     // 向uiLib中添加组件别名
     let realLibName = this.getRealLibName(libName);
-    let libSumamry = this.usedLib.get(realLibName);
-    libSumamry.incrCompontentUseCount(compontentName, this.fileUri);
+    let libUsedSumamry = this.usedLib.get(realLibName);
+    libUsedSumamry.incrCompontentUseCount(compontentName, this.fileUri);
 
     // 将结果设置回uiLibSummary
-    this.usedLib.set(realLibName, libSumamry);
+    this.usedLib.set(realLibName, libUsedSumamry);
   }
 
   /**
    * 组件库使用数+1
    * @param libName
    */
-  incrUiLibUseCount(libName: string) {
+  incrLibUseCount(libName: string) {
     if (this.isLibNameRegisted(libName) === false) {
       // 如果uiLib不存在, 需要先行注册
       this.addLib(libName);
@@ -384,11 +384,11 @@ export class UsedSummaryInFile {
 
     // 向uiLib中添加组件别名
     let realLibName = this.getRealLibName(libName);
-    let libSumamry = this.usedLib.get(realLibName);
-    libSumamry.incrUiLibUseCount(this.fileUri);
+    let libUsedSumamry = this.usedLib.get(realLibName);
+    libUsedSumamry.incrUiLibUseCount(this.fileUri);
 
     // 将结果设置回uiLibSummary
-    this.usedLib.set(realLibName, libSumamry);
+    this.usedLib.set(realLibName, libUsedSumamry);
   }
 
   /**

@@ -299,7 +299,7 @@ export default function (opts) {
           }
           if (isRegistedUiLibName) {
             // 组件库使用次数+1
-            summaryDb.incrUiLibUseCount(calleeItemName);
+            summaryDb.incrLibUseCount(calleeItemName);
           } else {
             // 组件使用次数+1
             let 原组件隶属的_组件库名 = summaryDb.getCompontentNameBelongToLib(calleeItemName);
