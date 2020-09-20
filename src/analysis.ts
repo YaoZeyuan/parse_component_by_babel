@@ -7,9 +7,9 @@ import {
   CallExpression,
 } from '@babel/types';
 import { types as babelTypes } from '@babel/core';
-import { Summary } from './index';
+import { Summary } from './summary';
 import { isLegalTarget, getPackageName, getCompontentName } from './utils';
-import { sum } from 'lodash';
+
 // @babel/parser中, 所有可能的type列表 => https://juejin.im/post/5bed908e6fb9a049b5066215#heading-102
 // 在 https://astexplorer.net/ 中, 选用的 babylon7解析器,  以 babelv7 作为transform, 可以预览代码实际生成的ast树
 
@@ -207,23 +207,13 @@ export default function (opts) {
               // 被解构的是组件库
               // 则新元素为组件
               // message = antd.message
-              summaryDb.addCompontentAlias(
-                被解构的变量名,
-                被解构的变量名下_解构出的属性,
-                解构出的新变量名,
-              );
+              summaryDb.addCompontentAlias(被解构的变量名, 被解构的变量名下_解构出的属性, 解构出的新变量名);
             } else {
-              let 被解构组件隶属的_组件库名 = summaryDb.getCompontentNameBelongToUiLib(
-                被解构的变量名,
-              );
+              let 被解构组件隶属的_组件库名 = summaryDb.getCompontentNameBelongToUiLib(被解构的变量名);
               // 被解构的是组件
               // 对应于
               // SelfButton = Button.PrimaryButton
-              summaryDb.addCompontentAlias(
-                被解构组件隶属的_组件库名,
-                被解构的变量名,
-                解构出的新变量名,
-              );
+              summaryDb.addCompontentAlias(被解构组件隶属的_组件库名, 被解构的变量名, 解构出的新变量名);
 
               // 后续没有用到此处的PrimaryButton属性, 因此不需要记录
               // summaryDb.addCompontentAlias(
