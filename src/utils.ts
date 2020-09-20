@@ -77,6 +77,7 @@ export function checkParamCompleteAndInit(parse_result) {
   }
   if (check_argv_complete === false) {
     // 参数不完整, 自动退出
+    console.warn(`传入参数不完整, 自动退出`);
     process.exit();
     return;
   }
