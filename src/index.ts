@@ -29,7 +29,7 @@ function transformCode2ES5(filename: string, content: string) {
  * @param fileUri
  * @param libList
  */
-async function fileParser(fileUri: string, libList: string[]) {
+async function asyncParseFile(fileUri: string, libList: string[]) {
   const fileContent = fs.readFileSync(fileUri, { encoding: 'utf8' });
   const parseResult = path.parse(fileUri);
   const filename = parseResult.base;
@@ -54,7 +54,7 @@ async function fileParser(fileUri: string, libList: string[]) {
 }
 
 // 实际执行的代码
-async function startAnalyze() {
+async function asyncStartAnalyze() {
   //获取命令行参数
   let parse_result = minimist(process.argv.slice(2));
   // 检查传入参数完整性
@@ -88,7 +88,7 @@ async function startAnalyze() {
   for (let fileObj of needDetectFileUriList) {
     counter++;
     // @todo 这里应该叫 analyzeResult 更合适
-    let summaryResult: Summary | undefined = await fileParser(fileObj.uri, libList).catch((err: Error) => {
+    let summaryResult: Summary | undefined = await asyncParseFile(fileObj.uri, libList).catch((err: Error) => {
       let errorInfo: TypeParseError = {
         uri: fileObj.uri,
         errorInfo: {
@@ -124,4 +124,4 @@ async function startAnalyze() {
 }
 
 // 启动解析器
-startAnalyze();
+asyncStartAnalyze();
