@@ -1,180 +1,3 @@
-
-/**
- * 使用的组件
- */
-class UsedCompontent {
-  name: string;
-  aliasNameSet: Set<string>;
-
-  /**
-   * 使用统计
-   */
-  useSummary: Map<string, number> = new Map();
-
-  constructor(name: string) {
-    this.name = name;
-    this.aliasNameSet = new Set([name]);
-  }
-
-  addAliasName(aliasName: string) {
-    this.aliasNameSet.add(aliasName);
-    return;
-  }
-
-  incrUseCount(fileUri: string) {
-    let oldUseCount = 0;
-    if (this.useSummary.has(fileUri)) {
-      oldUseCount = this.useSummary.get(fileUri);
-    }
-    this.useSummary.set(fileUri, oldUseCount + 1);
-    return;
-  }
-}
-
-/**
- * 使用的组件库
- */
-class UsedLib {
-  /**
-   * npm包名
-   */
-  name: string;
-  /**
-   * 导入npm包后, 引入的别名
-   * 例如:
-   * import * as K from 'lodash', 此时K即为lodash的别名
-   */
-  aliasNameSet: Set<string>;
-
-  /**
-   * 组件库本身也可能被直接使用
-   * fileUri => useCount
-   * 示例
-   *
-   * import axios from "axios"
-   * axios("GET", "https://www.baidu.com")
-   *
-   */
-  directUseSummary: Map<string, number> = new Map();
-
-  /**
-   * 记录compontent的别名列表, 方便查询
-   */
-  aliasCompontentNameMap: Map<string, string> = new Map();
-
-  compontentSummary: Map<string, UsedCompontent> = new Map();
-
-  constructor(libName: string) {
-    this.name = libName;
-    this.aliasNameSet = new Set([libName]);
-  }
-
-  /**
-   * 检查compontentName是否被注册过
-   * @param compontentName
-   */
-  private isCompontentNameRegisted(compontentName: string) {
-    return this.aliasCompontentNameMap.has(compontentName);
-  }
-
-  /**
-   * 注册别名和原组件之间的关系
-   * @param compontentName
-   * @param aliasName
-   */
-  private registCompontentNameAndAliasName(compontentName: string, aliasName: string) {
-    return this.aliasCompontentNameMap.set(aliasName, compontentName);
-  }
-
-  /**
-   * 获取组件别名实际对应的组件名
-   * @param compontentAliasName
-   */
-  private getRealCompontentName(compontentAliasName: string) {
-    return this.aliasCompontentNameMap.get(compontentAliasName);
-  }
-
-  /**
-   * 注册组件
-   * @param compontentName
-   */
-  addCompontent(compontentName: string) {
-    if (this.isCompontentNameRegisted(compontentName)) {
-      // 这个组件已经注册过, 自动跳过
-      return;
-    }
-    let compontentSummary = new UsedCompontent(compontentName);
-    this.compontentSummary.set(compontentName, compontentSummary);
-    this.registCompontentNameAndAliasName(compontentName, compontentName);
-    return;
-  }
-
-  /**
-   * 注册组件别名
-   * @param compontentName 组件名(本身也可能是别名)
-   * @param compontentAliasName 组件别名
-   */
-  addCompontentAlias(compontentName: string, compontentAliasName: string) {
-    if (this.isCompontentNameRegisted(compontentAliasName)) {
-      // 别名只允许注册一次
-      return;
-    }
-
-    if (this.isCompontentNameRegisted(compontentName)) {
-      // 组件已注册
-      // 获取compontentName对应的本名
-      let realCompontentName = this.getRealCompontentName(compontentName);
-      this.registCompontentNameAndAliasName(realCompontentName, compontentAliasName);
-      return;
-    }
-
-    // 组件未注册, 先注册组件
-    this.addCompontent(compontentName);
-    // 再注册组件别名
-    this.registCompontentNameAndAliasName(compontentName, compontentAliasName);
-    return;
-  }
-
-  /**
-   * compontent在fileUri中使用数+1
-   *
-   * @param compontentName
-   * @param fileUri
-   */
-  incrCompontentUseCount(compontentName: string, fileUri: string) {
-    this.addCompontent(compontentName);
-    // 获取组件本名
-    let realCompontentName = this.getRealCompontentName(compontentName);
-
-    let compontentSummary = this.compontentSummary.get(realCompontentName);
-    compontentSummary.incrUseCount(fileUri);
-    // 重新更新回去
-    this.compontentSummary.set(realCompontentName, compontentSummary);
-  }
-
-  /**
-   * lib在fileUri中使用数+1
-   *
-   * @param compontentName
-   * @param fileUri
-   */
-  incrLibUseCount(fileUri: string) {
-    let oldUseCount = 0;
-    if (this.directUseSummary.has(fileUri)) {
-      oldUseCount = this.directUseSummary.get(fileUri);
-    }
-    this.directUseSummary.set(fileUri, oldUseCount + 1);
-  }
-
-  /**
-   * 检查是否是注册过的组件名
-   * @param testName
-   */
-  isRegistedCompontentName(testName: string) {
-    return this.isCompontentNameRegisted(testName);
-  }
-}
-
 /**
  * 使用情况汇总
  */
@@ -376,6 +199,182 @@ export class UsedSummaryInFile {
         return uiLib.name;
       }
     }
+    return;
+  }
+}
+
+/**
+ * 使用的组件库
+ */
+class UsedLib {
+  /**
+   * npm包名
+   */
+  name: string;
+  /**
+   * 导入npm包后, 引入的别名
+   * 例如:
+   * import * as K from 'lodash', 此时K即为lodash的别名
+   */
+  aliasNameSet: Set<string>;
+
+  /**
+   * 组件库本身也可能被直接使用
+   * fileUri => useCount
+   * 示例
+   *
+   * import axios from "axios"
+   * axios("GET", "https://www.baidu.com")
+   *
+   */
+  directUseSummary: Map<string, number> = new Map();
+
+  /**
+   * 记录compontent的别名列表, 方便查询
+   */
+  aliasCompontentNameMap: Map<string, string> = new Map();
+
+  compontentSummary: Map<string, UsedCompontent> = new Map();
+
+  constructor(libName: string) {
+    this.name = libName;
+    this.aliasNameSet = new Set([libName]);
+  }
+
+  /**
+   * 检查compontentName是否被注册过
+   * @param compontentName
+   */
+  private isCompontentNameRegisted(compontentName: string) {
+    return this.aliasCompontentNameMap.has(compontentName);
+  }
+
+  /**
+   * 注册别名和原组件之间的关系
+   * @param compontentName
+   * @param aliasName
+   */
+  private registCompontentNameAndAliasName(compontentName: string, aliasName: string) {
+    return this.aliasCompontentNameMap.set(aliasName, compontentName);
+  }
+
+  /**
+   * 获取组件别名实际对应的组件名
+   * @param compontentAliasName
+   */
+  private getRealCompontentName(compontentAliasName: string) {
+    return this.aliasCompontentNameMap.get(compontentAliasName);
+  }
+
+  /**
+   * 注册组件
+   * @param compontentName
+   */
+  addCompontent(compontentName: string) {
+    if (this.isCompontentNameRegisted(compontentName)) {
+      // 这个组件已经注册过, 自动跳过
+      return;
+    }
+    let compontentSummary = new UsedCompontent(compontentName);
+    this.compontentSummary.set(compontentName, compontentSummary);
+    this.registCompontentNameAndAliasName(compontentName, compontentName);
+    return;
+  }
+
+  /**
+   * 注册组件别名
+   * @param compontentName 组件名(本身也可能是别名)
+   * @param compontentAliasName 组件别名
+   */
+  addCompontentAlias(compontentName: string, compontentAliasName: string) {
+    if (this.isCompontentNameRegisted(compontentAliasName)) {
+      // 别名只允许注册一次
+      return;
+    }
+
+    if (this.isCompontentNameRegisted(compontentName)) {
+      // 组件已注册
+      // 获取compontentName对应的本名
+      let realCompontentName = this.getRealCompontentName(compontentName);
+      this.registCompontentNameAndAliasName(realCompontentName, compontentAliasName);
+      return;
+    }
+
+    // 组件未注册, 先注册组件
+    this.addCompontent(compontentName);
+    // 再注册组件别名
+    this.registCompontentNameAndAliasName(compontentName, compontentAliasName);
+    return;
+  }
+
+  /**
+   * compontent在fileUri中使用数+1
+   *
+   * @param compontentName
+   * @param fileUri
+   */
+  incrCompontentUseCount(compontentName: string, fileUri: string) {
+    this.addCompontent(compontentName);
+    // 获取组件本名
+    let realCompontentName = this.getRealCompontentName(compontentName);
+
+    let compontentSummary = this.compontentSummary.get(realCompontentName);
+    compontentSummary.incrUseCount(fileUri);
+    // 重新更新回去
+    this.compontentSummary.set(realCompontentName, compontentSummary);
+  }
+
+  /**
+   * lib在fileUri中使用数+1
+   *
+   * @param compontentName
+   * @param fileUri
+   */
+  incrLibUseCount(fileUri: string) {
+    let oldUseCount = 0;
+    if (this.directUseSummary.has(fileUri)) {
+      oldUseCount = this.directUseSummary.get(fileUri);
+    }
+    this.directUseSummary.set(fileUri, oldUseCount + 1);
+  }
+
+  /**
+   * 检查是否是注册过的组件名
+   * @param testName
+   */
+  isRegistedCompontentName(testName: string) {
+    return this.isCompontentNameRegisted(testName);
+  }
+}
+
+/**
+ * 使用的组件
+ */
+class UsedCompontent {
+  name: string;
+  aliasNameSet: Set<string>;
+
+  /**
+   * 使用统计
+   */
+  useSummary: Map<string, number> = new Map();
+
+  constructor(name: string) {
+    this.name = name;
+    this.aliasNameSet = new Set([name]);
+  }
+
+  addAliasName(aliasName: string) {
+    this.aliasNameSet.add(aliasName);
+    return;
+  }
+
+  incrUseCount(fileUri: string) {
+    let oldUseCount = 0;
+    if (this.useSummary.has(fileUri)) {
+      oldUseCount = this.useSummary.get(fileUri);
+    }
+    this.useSummary.set(fileUri, oldUseCount + 1);
     return;
   }
 }
