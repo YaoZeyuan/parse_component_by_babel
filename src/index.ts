@@ -4,8 +4,8 @@ import path from 'path';
 import fs from 'fs';
 import minimist from 'minimist';
 import * as utils from './utils';
-import { UsedSummaryInFile, SummaryCollection } from './summary';
-import { TypeParseError } from './collection';
+import { UsedSummaryInFile } from './summary';
+import {  SummaryCollection } from './collection';
 let babel = require('@babel/core');
 
 function transformCode2ES5(filename: string, content: string) {
@@ -88,24 +88,26 @@ async function asyncStartAnalyze() {
   for (let fileObj of needDetectFileUriList) {
     counter++;
     // @todo 这里应该叫 analyzeResult 更合适
-    let summaryResult: UsedSummaryInFile | undefined = await asyncParseFile(fileObj.uri, libList).catch((err: Error) => {
-      let errorInfo: TypeParseError = {
-        uri: fileObj.uri,
-        errorInfo: {
-          name: err.name,
-          message: err.message,
-          stack: err.stack,
-        },
-      };
+    let summaryResult: UsedSummaryInFile | undefined = await asyncParseFile(fileObj.uri, libList).catch(
+      (err: Error) => {
+        let errorInfo = {
+          uri: fileObj.uri,
+          errorInfo: {
+            name: err.name,
+            message: err.message,
+            stack: err.stack,
+          },
+        };
 
-      // 更新数据
-      failedCounter++;
-      parseFailedList.push(errorInfo);
+        // 更新数据
+        failedCounter++;
+        parseFailedList.push(errorInfo);
 
-      utils.fileLog(`第${counter}/${totalFileCount}个文件${fileObj.uri}解析失败, 目前解析失败${failedCounter}个`);
-      utils.fileLog('失败原因=>', errorInfo.errorInfo);
-      return undefined;
-    });
+        utils.fileLog(`第${counter}/${totalFileCount}个文件${fileObj.uri}解析失败, 目前解析失败${failedCounter}个`);
+        utils.fileLog('失败原因=>', errorInfo.errorInfo);
+        return undefined;
+      },
+    );
     if (summaryResult === undefined) {
       continue;
     }
