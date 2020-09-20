@@ -54,7 +54,10 @@ export type TypeCompontentReport = {
   }[];
 };
 
-class CompontentSummary {
+/**
+ * 使用的组件
+ */
+class UsedCompontent {
   name: string;
   aliasNameSet: Set<string>;
 
@@ -83,7 +86,10 @@ class CompontentSummary {
   }
 }
 
-class UiLibSummary {
+/**
+ * 使用的组件库
+ */
+class UsedLib {
   name: string;
   aliasNameSet: Set<string>;
   /**
@@ -102,7 +108,7 @@ class UiLibSummary {
    */
   aliasCompontentNameMap: Map<string, string> = new Map();
 
-  compontentSummary: Map<string, CompontentSummary> = new Map();
+  compontentSummary: Map<string, UsedCompontent> = new Map();
 
   constructor(uiLibName: string) {
     this.name = uiLibName;
@@ -144,7 +150,7 @@ class UiLibSummary {
       // 这个组件已经注册过, 自动跳过
       return;
     }
-    let compontentSummary = new CompontentSummary(compontentName);
+    let compontentSummary = new UsedCompontent(compontentName);
     this.compontentSummary.set(compontentName, compontentSummary);
     this.registCompontentNameAndAliasName(compontentName, compontentName);
     return;
@@ -216,16 +222,19 @@ class UiLibSummary {
   }
 }
 
-export class Summary {
+/**
+ * 使用情况汇总
+ */
+export class FileUsedSummary {
   /**
    * 基本假设
    * 同一文件内, uiLib之间别名不会重复, 组件之间别名不会重复, (uiLib和compontent的别名可以重复)
    */
-  uiLibSummary: Map<string, UiLibSummary> = new Map();
+  usedLib: Map<string, UsedLib> = new Map();
   /**
    * 记录uiLib的别名列表, 方便查询
    */
-  aliasUiLibNameMap: Map<string, string> = new Map();
+  aliasLibNameMap: Map<string, string> = new Map();
 
   /**
    * 文件路径
@@ -237,157 +246,157 @@ export class Summary {
 
   /**
    * 获取组件别名实际对应的组件库名
-   * @param aliasUiLibName
+   * @param aliasLibName
    */
-  private getRealUiLibName(aliasUiLibName: string) {
-    return this.aliasUiLibNameMap.get(aliasUiLibName);
+  private getRealLibName(aliasLibName: string) {
+    return this.aliasLibNameMap.get(aliasLibName);
   }
 
   /**
    * 检查uiLibName是否被注册过
    * @param uiLibName
    */
-  private isUiLibNameRegisted(uiLibName: string) {
-    return this.aliasUiLibNameMap.has(uiLibName);
+  private isLibNameRegisted(uiLibName: string) {
+    return this.aliasLibNameMap.has(uiLibName);
   }
 
   /**
    * 注册uiLibName和别名之间的关系
-   * @param uiLibName
+   * @param libName
    * @param aliasName
    */
-  private registUiLibNameAndAliasName(uiLibName: string, aliasName: string) {
-    return this.aliasUiLibNameMap.set(aliasName, uiLibName);
+  private registLibNameAndAliasName(libName: string, aliasName: string) {
+    return this.aliasLibNameMap.set(aliasName, libName);
   }
 
   /**
    * 添加uiLib记录
-   * @param uiLibName
+   * @param libName
    */
-  addUiLib(uiLibName: string) {
+  addLib(libName: string) {
     // 检查uiLibName是否为别名
-    if (this.isUiLibNameRegisted(uiLibName)) {
+    if (this.isLibNameRegisted(libName)) {
       // 已被注册, 直接返回即可
       return;
     }
-    let newLib = new UiLibSummary(uiLibName);
-    this.uiLibSummary.set(uiLibName, newLib);
+    let newLib = new UsedLib(libName);
+    this.usedLib.set(libName, newLib);
     // 在别名库里注册上
-    this.registUiLibNameAndAliasName(uiLibName, uiLibName);
+    this.registLibNameAndAliasName(libName, libName);
     return;
   }
 
   /**
    * 为组件库添加别名
-   * @param uiLibName
+   * @param libName
    * @param aliasName
    */
-  addUiLibAlias(uiLibName: string, aliasName: string) {
-    if (this.isUiLibNameRegisted(aliasName)) {
+  addLibAlias(libName: string, aliasName: string) {
+    if (this.isLibNameRegisted(aliasName)) {
       // 别名已注册, 直接返回即可
       return;
     }
 
-    if (this.isUiLibNameRegisted(uiLibName)) {
+    if (this.isLibNameRegisted(libName)) {
       // 组件库已存在
       // 先获取本名
-      let realUiLibName = this.getRealUiLibName(uiLibName);
+      let realUiLibName = this.getRealLibName(libName);
       // 再注册别名
-      this.registUiLibNameAndAliasName(realUiLibName, aliasName);
+      this.registLibNameAndAliasName(realUiLibName, aliasName);
       return;
     } else {
       // 组件库不存在, 先注册组件库, 再注册组件别名
-      this.addUiLib(uiLibName);
-      this.registUiLibNameAndAliasName(uiLibName, aliasName);
+      this.addLib(libName);
+      this.registLibNameAndAliasName(libName, aliasName);
     }
   }
 
   /**
    * 向组件库中添加组件
-   * @param uiLibName
+   * @param libName
    * @param compontentName
    */
-  addCompontent(uiLibName: string, compontentName: string) {
-    if (this.isUiLibNameRegisted(uiLibName) === false) {
+  addCompontent(libName: string, compontentName: string) {
+    if (this.isLibNameRegisted(libName) === false) {
       // 如果uiLib不存在, 需要先行注册
-      this.addUiLib(uiLibName);
+      this.addLib(libName);
     }
 
     // 向uiLib中添加组件
-    let realUiLibName = this.getRealUiLibName(uiLibName);
-    let uiLibSumamry = this.uiLibSummary.get(realUiLibName);
-    uiLibSumamry.addCompontent(compontentName);
+    let realLibName = this.getRealLibName(libName);
+    let usedLib = this.usedLib.get(realLibName);
+    usedLib.addCompontent(compontentName);
 
     // 将结果设置回uiLibSummary
-    this.uiLibSummary.set(realUiLibName, uiLibSumamry);
+    this.usedLib.set(realLibName, usedLib);
   }
 
   /**
    * 向组件库中添加组件库别名
-   * @param uiLibName
+   * @param libName
    * @param compontentName
    * @param compontentNameAlias
    */
-  addCompontentAlias(uiLibName: string, compontentName: string, compontentNameAlias: string) {
-    if (this.isUiLibNameRegisted(uiLibName) === false) {
+  addCompontentAlias(libName: string, compontentName: string, compontentNameAlias: string) {
+    if (this.isLibNameRegisted(libName) === false) {
       // 如果uiLib不存在, 需要先行注册
-      this.addUiLib(uiLibName);
+      this.addLib(libName);
     }
 
     // 向uiLib中添加组件别名
-    let realUiLibName = this.getRealUiLibName(uiLibName);
-    let uiLibSumamry = this.uiLibSummary.get(realUiLibName);
-    uiLibSumamry.addCompontentAlias(compontentName, compontentNameAlias);
+    let realLibName = this.getRealLibName(libName);
+    let libSumamry = this.usedLib.get(realLibName);
+    libSumamry.addCompontentAlias(compontentName, compontentNameAlias);
 
     // 将结果设置回uiLibSummary
-    this.uiLibSummary.set(realUiLibName, uiLibSumamry);
+    this.usedLib.set(realLibName, libSumamry);
   }
 
   /**
    * compontent使用数+1
-   * @param uiLibName
+   * @param libName
    * @param compontentName
    */
-  incrCompontentUseCount(uiLibName: string, compontentName: string) {
-    if (this.isUiLibNameRegisted(uiLibName) === false) {
+  incrCompontentUseCount(libName: string, compontentName: string) {
+    if (this.isLibNameRegisted(libName) === false) {
       // 如果uiLib不存在, 需要先行注册
-      this.addUiLib(uiLibName);
+      this.addLib(libName);
     }
 
     // 向uiLib中添加组件别名
-    let realUiLibName = this.getRealUiLibName(uiLibName);
-    let uiLibSumamry = this.uiLibSummary.get(realUiLibName);
-    uiLibSumamry.incrCompontentUseCount(compontentName, this.fileUri);
+    let realLibName = this.getRealLibName(libName);
+    let libSumamry = this.usedLib.get(realLibName);
+    libSumamry.incrCompontentUseCount(compontentName, this.fileUri);
 
     // 将结果设置回uiLibSummary
-    this.uiLibSummary.set(realUiLibName, uiLibSumamry);
+    this.usedLib.set(realLibName, libSumamry);
   }
 
   /**
    * 组件库使用数+1
-   * @param uiLibName
+   * @param libName
    */
-  incrUiLibUseCount(uiLibName: string) {
-    if (this.isUiLibNameRegisted(uiLibName) === false) {
+  incrUiLibUseCount(libName: string) {
+    if (this.isLibNameRegisted(libName) === false) {
       // 如果uiLib不存在, 需要先行注册
-      this.addUiLib(uiLibName);
+      this.addLib(libName);
     }
 
     // 向uiLib中添加组件别名
-    let realUiLibName = this.getRealUiLibName(uiLibName);
-    let uiLibSumamry = this.uiLibSummary.get(realUiLibName);
-    uiLibSumamry.incrUiLibUseCount(this.fileUri);
+    let realLibName = this.getRealLibName(libName);
+    let libSumamry = this.usedLib.get(realLibName);
+    libSumamry.incrUiLibUseCount(this.fileUri);
 
     // 将结果设置回uiLibSummary
-    this.uiLibSummary.set(realUiLibName, uiLibSumamry);
+    this.usedLib.set(realLibName, libSumamry);
   }
 
   /**
    * 检查是否是注册过的组件库名
    * @param targetName
    */
-  isRegistedUiLibName(targetName: string) {
-    return this.isUiLibNameRegisted(targetName);
+  isRegistedLibName(targetName: string) {
+    return this.isLibNameRegisted(targetName);
   }
 
   /**
@@ -395,7 +404,7 @@ export class Summary {
    * @param targetName
    */
   isRegistedCompontentName(targetName: string) {
-    for (let uiLib of this.uiLibSummary.values()) {
+    for (let uiLib of this.usedLib.values()) {
       if (uiLib.isRegistedCompontentName(targetName) === true) {
         return true;
       }
@@ -407,8 +416,8 @@ export class Summary {
    * 检查是否是注册过的组件名
    * @param targetName
    */
-  getCompontentNameBelongToUiLib(targetName: string) {
-    for (let uiLib of this.uiLibSummary.values()) {
+  getCompontentNameBelongToLib(targetName: string) {
+    for (let uiLib of this.usedLib.values()) {
       if (uiLib.isRegistedCompontentName(targetName) === true) {
         return uiLib.name;
       }
@@ -420,8 +429,8 @@ export class Summary {
 export class SummaryCollection {
   private summary: Map<string, TypeCacheUiLib> = new Map();
 
-  public add(target: Summary) {
-    for (let rawUiLibDetail of target.uiLibSummary.values()) {
+  public add(target: FileUsedSummary) {
+    for (let rawUiLibDetail of target.usedLib.values()) {
       let uiLibName = rawUiLibDetail.name;
       let storeItem: TypeCacheUiLib = {
         uiLibName: uiLibName,

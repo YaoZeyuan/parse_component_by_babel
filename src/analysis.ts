@@ -7,7 +7,7 @@ import {
   CallExpression,
 } from '@babel/types';
 import { types as babelTypes } from '@babel/core';
-import { Summary } from './summary';
+import { FileUsedSummary } from './summary';
 import { isLegalTarget, getPackageName, getCompontentName } from './utils';
 
 // @babel/parser中, 所有可能的type列表 => https://juejin.im/post/5bed908e6fb9a049b5066215#heading-102
@@ -20,7 +20,7 @@ export default function (opts) {
       ImportDeclaration({ node }: { node: ImportDeclaration }, state) {
         // 初始化参数
         // 汇总数据库
-        let summaryDb = state.opts.summaryResult as Summary;
+        let summaryDb = state.opts.summaryResult as FileUsedSummary;
         // 需要检查的ui组件库列表
         let uiLibList = state.opts.input as string[];
 
@@ -41,7 +41,7 @@ export default function (opts) {
         }
 
         // 检查通过, 在summaryDb中注册该组件库
-        summaryDb.addUiLib(packageName);
+        summaryDb.addLib(packageName);
 
         // 组件名前缀, 对应case
         // import { Button } from "antd/dist/lib/ButtonCollection"
@@ -60,7 +60,7 @@ export default function (opts) {
             case 'ImportNamespaceSpecifier':
               if (compontentNamePrefix === '') {
                 // 后缀为空, 说明是直接导入的组件库, 新导入的名称为组件库别名
-                summaryDb.addUiLibAlias(packageName, element.local.name);
+                summaryDb.addLibAlias(packageName, element.local.name);
               } else {
                 // 否则则是从组件库中导入组件
                 // compontentNamePrefix 为实际组件名, element.local.name 为组件别名
@@ -98,7 +98,7 @@ export default function (opts) {
       VariableDeclaration({ node }: { node: VariableDeclaration }, state) {
         // 初始化参数
         // 汇总数据库
-        let summaryDb = state.opts.summaryResult as Summary;
+        let summaryDb = state.opts.summaryResult as FileUsedSummary;
         // 需要检查的ui组件库列表
         let uiLibList = state.opts.input as string[];
 
@@ -145,7 +145,7 @@ export default function (opts) {
                   continue;
                 }
 
-                summaryDb.addUiLib(packageName);
+                summaryDb.addLib(packageName);
 
                 // 导入的变量名
                 let varItem = item.id as Identifier;
@@ -155,7 +155,7 @@ export default function (opts) {
                   // 如果前缀为空, 导入的是组件库
                   // 对应case
                   // let antd = require("antd")
-                  summaryDb.addUiLibAlias(packageName, varName);
+                  summaryDb.addLibAlias(packageName, varName);
                 } else {
                   // 否则, 对应case
                   // let button = require("antd/lib/Button")
@@ -194,7 +194,7 @@ export default function (opts) {
             let 被解构的变量名下_解构出的属性 = propertyItem.name;
 
             let isRegistedCompontentName = summaryDb.isRegistedCompontentName(被解构的变量名);
-            let isRegistedUiLibName = summaryDb.isRegistedUiLibName(被解构的变量名);
+            let isRegistedUiLibName = summaryDb.isRegistedLibName(被解构的变量名);
 
             if (isRegistedCompontentName === false && isRegistedUiLibName === false) {
               // 既不是注册的组件库
@@ -209,7 +209,7 @@ export default function (opts) {
               // message = antd.message
               summaryDb.addCompontentAlias(被解构的变量名, 被解构的变量名下_解构出的属性, 解构出的新变量名);
             } else {
-              let 被解构组件隶属的_组件库名 = summaryDb.getCompontentNameBelongToUiLib(被解构的变量名);
+              let 被解构组件隶属的_组件库名 = summaryDb.getCompontentNameBelongToLib(被解构的变量名);
               // 被解构的是组件
               // 对应于
               // SelfButton = Button.PrimaryButton
@@ -242,7 +242,7 @@ export default function (opts) {
             let 新变量名 = varItem.name;
 
             let isRegistedCompontentName = summaryDb.isRegistedCompontentName(原变量名);
-            let isRegistedUiLibName = summaryDb.isRegistedUiLibName(原变量名);
+            let isRegistedUiLibName = summaryDb.isRegistedLibName(原变量名);
 
             if (isRegistedCompontentName === false && isRegistedUiLibName === false) {
               // 既不是注册的组件库
@@ -253,10 +253,10 @@ export default function (opts) {
             if (isRegistedUiLibName) {
               // 重命名组件库
               // antdV2 = antd
-              summaryDb.addUiLibAlias(原变量名, 新变量名);
+              summaryDb.addLibAlias(原变量名, 新变量名);
             } else {
               // 重命名组件
-              let 原组件隶属的_组件库名 = summaryDb.getCompontentNameBelongToUiLib(原变量名);
+              let 原组件隶属的_组件库名 = summaryDb.getCompontentNameBelongToLib(原变量名);
               summaryDb.addCompontentAlias(原组件隶属的_组件库名, 原变量名, 新变量名);
             }
             continue;
@@ -268,7 +268,7 @@ export default function (opts) {
       },
       // 处理调用语句(统计组件实际被使用次数)
       CallExpression({ node }: { node: CallExpression }, state) {
-        let summaryDb = state.opts.summaryResult as Summary;
+        let summaryDb = state.opts.summaryResult as FileUsedSummary;
         let calleeItem = node.callee as MemberExpression;
 
         // 统计组件库内函数调用
@@ -290,7 +290,7 @@ export default function (opts) {
           // 第一种情况, 直接调用
           let calleeItemName = (calleeItem as Identifier).name;
 
-          let isRegistedUiLibName = summaryDb.isRegistedUiLibName(calleeItemName);
+          let isRegistedUiLibName = summaryDb.isRegistedLibName(calleeItemName);
           let isRegistedCompontentName = summaryDb.isRegistedCompontentName(calleeItemName);
 
           if (isRegistedCompontentName === false && isRegistedUiLibName === false) {
@@ -302,7 +302,7 @@ export default function (opts) {
             summaryDb.incrUiLibUseCount(calleeItemName);
           } else {
             // 组件使用次数+1
-            let 原组件隶属的_组件库名 = summaryDb.getCompontentNameBelongToUiLib(calleeItemName);
+            let 原组件隶属的_组件库名 = summaryDb.getCompontentNameBelongToLib(calleeItemName);
             summaryDb.incrCompontentUseCount(原组件隶属的_组件库名, calleeItemName);
           }
         } else if (babelTypes.isMemberExpression(calleeItem)) {
@@ -330,12 +330,12 @@ export default function (opts) {
                 // 没被注册过的组件说明不是目标组件库成员, 不用考虑
                 if (summaryDb.isRegistedCompontentName(compontentName)) {
                   // 该组件曾经注册过
-                  let uiLibName = summaryDb.getCompontentNameBelongToUiLib(compontentName);
+                  let uiLibName = summaryDb.getCompontentNameBelongToLib(compontentName);
                   summaryDb.incrCompontentUseCount(uiLibName, compontentName);
                 }
               }
             } else {
-              let isRegistedUiLibName = summaryDb.isRegistedUiLibName(调用对象);
+              let isRegistedUiLibName = summaryDb.isRegistedLibName(调用对象);
               let isRegistedCompontentName = summaryDb.isRegistedCompontentName(调用对象);
               if (isRegistedUiLibName) {
                 // 作为组件库的子组件被调用
@@ -343,7 +343,7 @@ export default function (opts) {
               }
               if (isRegistedCompontentName) {
                 // 作为组件被调用
-                let uiLibName = summaryDb.getCompontentNameBelongToUiLib(调用对象);
+                let uiLibName = summaryDb.getCompontentNameBelongToLib(调用对象);
                 summaryDb.incrCompontentUseCount(uiLibName, 调用对象);
               }
             }
