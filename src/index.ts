@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import minimist from 'minimist';
 import * as utils from './utils';
-import { FileUsedSummary, SummaryCollection } from './summary';
+import { UsedSummaryInFile, SummaryCollection } from './summary';
 import { TypeParseError } from './collection';
 let babel = require('@babel/core');
 
@@ -36,7 +36,7 @@ async function asyncParseFile(fileUri: string, libList: string[]) {
   // 首先将ts/jsx/es6代码转译成标准es5代码
   let es5Code = transformCode2ES5(filename, fileContent);
   // 然后使用自定义插件, 对转义后代码进行解析
-  let summaryResult = new FileUsedSummary(fileUri);
+  let summaryResult = new UsedSummaryInFile(fileUri);
   babel.transformSync(es5Code, {
     plugins: [
       [
@@ -88,7 +88,7 @@ async function asyncStartAnalyze() {
   for (let fileObj of needDetectFileUriList) {
     counter++;
     // @todo 这里应该叫 analyzeResult 更合适
-    let summaryResult: FileUsedSummary | undefined = await asyncParseFile(fileObj.uri, libList).catch((err: Error) => {
+    let summaryResult: UsedSummaryInFile | undefined = await asyncParseFile(fileObj.uri, libList).catch((err: Error) => {
       let errorInfo: TypeParseError = {
         uri: fileObj.uri,
         errorInfo: {

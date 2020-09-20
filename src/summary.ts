@@ -110,9 +110,9 @@ class UsedLib {
 
   compontentSummary: Map<string, UsedCompontent> = new Map();
 
-  constructor(uiLibName: string) {
-    this.name = uiLibName;
-    this.aliasNameSet = new Set([uiLibName]);
+  constructor(libName: string) {
+    this.name = libName;
+    this.aliasNameSet = new Set([libName]);
   }
 
   /**
@@ -142,7 +142,6 @@ class UsedLib {
 
   /**
    * 注册组件
-   * @param uiLibName
    * @param compontentName
    */
   addCompontent(compontentName: string) {
@@ -225,7 +224,12 @@ class UsedLib {
 /**
  * 使用情况汇总
  */
-export class FileUsedSummary {
+export class UsedSummaryInFile {
+  /**
+   * 文件路径
+   */
+  fileUri: string = '';
+
   /**
    * 基本假设
    * 同一文件内, uiLib之间别名不会重复, 组件之间别名不会重复, (uiLib和compontent的别名可以重复)
@@ -236,10 +240,6 @@ export class FileUsedSummary {
    */
   aliasLibNameMap: Map<string, string> = new Map();
 
-  /**
-   * 文件路径
-   */
-  fileUri: string = '';
   constructor(fileUri: string) {
     this.fileUri = fileUri;
   }
@@ -429,7 +429,7 @@ export class FileUsedSummary {
 export class SummaryCollection {
   private summary: Map<string, TypeCacheUiLib> = new Map();
 
-  public add(target: FileUsedSummary) {
+  public add(target: UsedSummaryInFile) {
     for (let rawUiLibDetail of target.usedLib.values()) {
       let uiLibName = rawUiLibDetail.name;
       let storeItem: TypeCacheUiLib = {

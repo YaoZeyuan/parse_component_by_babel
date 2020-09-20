@@ -7,7 +7,7 @@ import {
   CallExpression,
 } from '@babel/types';
 import { types as babelTypes } from '@babel/core';
-import { FileUsedSummary } from './summary';
+import { UsedSummaryInFile } from './summary';
 import { isLegalTarget, getPackageName, getCompontentName } from './utils';
 
 // @babel/parser中, 所有可能的type列表 => https://juejin.im/post/5bed908e6fb9a049b5066215#heading-102
@@ -20,7 +20,7 @@ export default function (opts) {
       ImportDeclaration({ node }: { node: ImportDeclaration }, state) {
         // 初始化参数
         // 汇总数据库
-        let summaryDb = state.opts.summaryResult as FileUsedSummary;
+        let summaryDb = state.opts.summaryResult as UsedSummaryInFile;
         // 需要检查的ui组件库列表
         let uiLibList = state.opts.input as string[];
 
@@ -98,7 +98,7 @@ export default function (opts) {
       VariableDeclaration({ node }: { node: VariableDeclaration }, state) {
         // 初始化参数
         // 汇总数据库
-        let summaryDb = state.opts.summaryResult as FileUsedSummary;
+        let summaryDb = state.opts.summaryResult as UsedSummaryInFile;
         // 需要检查的ui组件库列表
         let uiLibList = state.opts.input as string[];
 
@@ -268,7 +268,7 @@ export default function (opts) {
       },
       // 处理调用语句(统计组件实际被使用次数)
       CallExpression({ node }: { node: CallExpression }, state) {
-        let summaryDb = state.opts.summaryResult as FileUsedSummary;
+        let summaryDb = state.opts.summaryResult as UsedSummaryInFile;
         let calleeItem = node.callee as MemberExpression;
 
         // 统计组件库内函数调用
