@@ -417,10 +417,10 @@ export class Summary {
   }
 }
 
-export class SummaryMergeTool {
+export class SummaryCollection {
   private summary: Map<string, TypeCacheUiLib> = new Map();
 
-  public addSummary(target: Summary) {
+  public add(target: Summary) {
     for (let rawUiLibDetail of target.uiLibSummary.values()) {
       let uiLibName = rawUiLibDetail.name;
       let storeItem: TypeCacheUiLib = {

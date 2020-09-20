@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import minimist from 'minimist';
 import * as utils from './utils';
-import { Summary, SummaryMergeTool } from './summary';
+import { Summary, SummaryCollection } from './summary';
 import { TypeParseError } from './collection';
 let babel = require('@babel/core');
 
@@ -54,7 +54,7 @@ async function fileParser(fileUri: string, libList: string[]) {
 }
 
 // 实际执行的代码
-async function runner() {
+async function startAnalyze() {
   //获取命令行参数
   let parse_result = minimist(process.argv.slice(2));
   // 检查传入参数完整性
@@ -81,14 +81,13 @@ async function runner() {
   let failedCounter = 0;
   let successCounter = 0;
   let parseFailedList = [];
-  let parseResultList = [];
-  let summaryMergeTool = new SummaryMergeTool();
+  let summaryCollection = new SummaryCollection();
 
   utils.fileLog(`准备进行解析, 共${totalFileCount}个文件`);
   // 针对每个文件进行解析
   for (let fileObj of needDetectFileUriList) {
     counter++;
-    let parseResult: Summary | undefined = await fileParser(fileObj.uri, libList).catch((err: Error) => {
+    let summaryResult: Summary | undefined = await fileParser(fileObj.uri, libList).catch((err: Error) => {
       let errorInfo: TypeParseError = {
         uri: fileObj.uri,
         errorInfo: {
@@ -106,23 +105,22 @@ async function runner() {
       utils.fileLog('失败原因=>', errorInfo.errorInfo);
       return undefined;
     });
-    if (parseResult === undefined) {
+    if (summaryResult === undefined) {
       continue;
     }
 
-    // 解析成功
-    summaryMergeTool.addSummary(parseResult);
-    parseResultList.push(parseResult);
+    // 解析成功, 将结果添加到数据库中
+    summaryCollection.add(summaryResult);
     successCounter++;
     utils.log(`${fileObj.uri}解析完毕`);
     utils.log(`第${counter}/${totalFileCount}个文件解析成功, 目前解析成功${successCounter}, 失败${failedCounter}`);
   }
 
   // 将解析结果记录到文件中
-  fs.writeFileSync(output_uri, JSON.stringify(summaryMergeTool.toJson(), null, 4));
+  fs.writeFileSync(output_uri, JSON.stringify(summaryCollection.toJson(), null, 4));
 
   utils.fileLog(`所有文件解析完毕`);
 }
 
 // 启动解析器
-runner();
+startAnalyze();
