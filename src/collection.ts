@@ -160,7 +160,8 @@ export class SummaryCollection {
         // 记录组件在文件中的使用次数
         for (let fileUri of rawCompontentDetail.useSummary.keys()) {
           let useCount = rawCompontentDetail.useSummary.get(fileUri);
-          compontentUseDetail.fileUriMap.set(fileUri, useCount);
+          let oldUseCount = compontentUseDetail.fileUriMap.get(fileUri) || 0;
+          compontentUseDetail.fileUriMap.set(fileUri, useCount + oldUseCount);
         }
         let compontentUseCount = 0;
         for (let subUseCount of compontentUseDetail.fileUriMap.values()) {
