@@ -41,7 +41,7 @@ async function asyncParseFile(fileUri: string, libList: string[]) {
     plugins: [
       [
         // 调用自定义babel组件进行解析
-        './src/analysis.js',
+        './dist/analysis.js',
         {
           input: libList,
           output: [],
