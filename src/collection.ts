@@ -1,34 +1,35 @@
 import { UsedSummaryInFile } from './summary';
 
-export type TypeCacheUiLib = {
+export type TypeLibUsed = {
   /**
-   * 组件库名
+   * npm包名
    */
-  uiLibName: string;
+  libName: string;
 
   /**
-   * 组件库本身被直接使用次数
+   * npm包被直接使用次数
    */
   directUseCount: number;
+
   /**
-   * 统计文件内使用次数.
+   * 按文件统计npm包被直接使用次数.
    * fileUri -> useCount
    */
   directUseFileUriMap: Map<string, number>;
 
   /**
-   * 组件库内组件总被使用次数
+   * npm包内组件总被使用次数
    */
   compontentUseCount: number;
   /**
-   * 组件库内, 子组件列表
+   * npm包内, 子组件列表
    */
-  compontentMap: Map<string, TypeCacheCompontent>;
+  compontentMap: Map<string, TypeCompontentUsed>;
 };
 /**
  * 组件缓存名
  */
-export type TypeCacheCompontent = {
+export type TypeCompontentUsed = {
   /**
    * 组件名
    */
@@ -99,13 +100,17 @@ export type TypeCompontentReport = {
 };
 
 export class SummaryCollection {
-  private summary: Map<string, TypeCacheUiLib> = new Map();
+  private summary: Map<string, TypeLibUsed> = new Map();
 
+  /**
+   * 每解析一个文件, 添加一次target, 因此target中使用的组件只会来自一个文件
+   * @param target
+   */
   public add(target: UsedSummaryInFile) {
     for (let rawUiLibDetail of target.usedLib.values()) {
       let uiLibName = rawUiLibDetail.name;
-      let storeItem: TypeCacheUiLib = {
-        uiLibName: uiLibName,
+      let storeItem: TypeLibUsed = {
+        libName: uiLibName,
         directUseFileUriMap: new Map(),
         directUseCount: 0,
         compontentUseCount: 0,
@@ -117,23 +122,33 @@ export class SummaryCollection {
 
       // 开始合并
 
-      // 首先合并直接使用次数
+      // 更新直接使用次数
+      let directUseCount = storeItem.directUseCount;
+
+      // 首先记录在文件中直接使用的情况
       for (let fileUri of rawUiLibDetail.directUseSummary.keys()) {
         let useCount = rawUiLibDetail.directUseSummary.get(fileUri);
-        storeItem.directUseFileUriMap.set(fileUri, useCount);
+
+        // 直接使用次数++
+        directUseCount = directUseCount + useCount;
+
+        // 判断之前是否有过使用记录
+        if (storeItem.directUseFileUriMap.has(fileUri)) {
+          // 有使用记录累加
+          let oldUseCount = storeItem.directUseFileUriMap.get(fileUri);
+          storeItem.directUseFileUriMap.set(fileUri, useCount + oldUseCount);
+        } else {
+          // 无使用记录直接登记
+          storeItem.directUseFileUriMap.set(fileUri, useCount);
+        }
       }
-      // 更新直接使用次数
-      let directUseCount = 0;
-      for (let fileUri of storeItem.directUseFileUriMap.keys()) {
-        let useCount = storeItem.directUseFileUriMap.get(fileUri);
-        directUseCount += useCount;
-      }
+      // 更新回storeItem里
       storeItem.directUseCount = directUseCount;
 
       // 其次合并各个组件的使用频率
       for (let rawCompontentDetail of rawUiLibDetail.compontentSummary.values()) {
         let compontentName = rawCompontentDetail.name;
-        let compontentUseDetail: TypeCacheCompontent = {
+        let compontentUseDetail: TypeCompontentUsed = {
           compontentName: compontentName,
           useCount: 0,
           fileUriMap: new Map(),
@@ -162,7 +177,7 @@ export class SummaryCollection {
       storeItem.compontentUseCount = compontentTotalUseCount;
 
       // 将数据更新回去
-      this.summary.set(storeItem.uiLibName, storeItem);
+      this.summary.set(storeItem.libName, storeItem);
     }
   }
 
@@ -209,7 +224,7 @@ export class SummaryCollection {
       });
 
       let uiLib: TypeUiLibReport = {
-        libName: rawUiLib.uiLibName,
+        libName: rawUiLib.libName,
         directUseCount: rawUiLib.directUseCount,
         useFileUriList: directUseFileUriList,
         compontentDetailList: compontentUseList,
