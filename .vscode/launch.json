@@ -9,12 +9,12 @@
       "request": "launch",
       "name": "启动程序-linux",
       "skipFiles": ["<node_internals>/**"],
-      "program": "${workspaceFolder}/dist/index.js",
-      "outFiles": ["${workspaceFolder}/src/*.js"],
+      "program": "${workspaceFolder}/src/index.ts",
+      "outFiles": ["${workspaceFolder}/dist/*.js"],
       "args": [
         // "--project_uri=/home/yao/www/basic_framework/rank/command/tmp/project",
         "--project_uri=./demo/project",
-        "--lib_list_json=[\"antd\",\"antd-mobile\"]",
+        "--lib_list_json=[\"antd\",\"antd-mobile\",\"demoProject\"]",
         "--output_uri=./demo/output/demo.json",
         "--project_name=nts",
         "--log_uri=./demo/output/runtime.log"
