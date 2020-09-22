@@ -20,20 +20,20 @@ export type TypeLibUsed = {
   /**
    * npm包内组件总被使用次数
    */
-  compontentUseCount: number;
+  componentUseCount: number;
   /**
    * npm包内, 子组件列表
    */
-  compontentMap: Map<string, TypeCompontentUsed>;
+  componentMap: Map<string, TypeComponentUsed>;
 };
 /**
  * 组件缓存名
  */
-export type TypeCompontentUsed = {
+export type TypeComponentUsed = {
   /**
    * 组件名
    */
-  compontentName: string;
+  componentName: string;
   /**
    * 总使用次数
    */
@@ -71,21 +71,21 @@ export type TypeUiLibReport = {
   /**
    * 组件库内组件累计被使用次数
    */
-  compontentUseCount: number;
+  componentUseCount: number;
   /**
    * 组件库内列表
    */
-  compontentDetailList: TypeCompontentReport[];
+  componentDetailList: TypeComponentReport[];
 };
 
 /**
  * 组件使用次数
  */
-export type TypeCompontentReport = {
+export type TypeComponentReport = {
   /**
    * 组件名
    */
-  compontentName: string;
+  componentName: string;
   /**
    * 组件被使用次数
    */
@@ -113,8 +113,8 @@ export class SummaryCollection {
         libName: uiLibName,
         directUseFileUriMap: new Map(),
         directUseCount: 0,
-        compontentUseCount: 0,
-        compontentMap: new Map(),
+        componentUseCount: 0,
+        componentMap: new Map(),
       };
       if (this.summary.has(uiLibName)) {
         storeItem = this.summary.get(uiLibName);
@@ -146,36 +146,36 @@ export class SummaryCollection {
       storeItem.directUseCount = directUseCount;
 
       // 其次合并各个组件的使用频率
-      for (let rawCompontentDetail of rawUiLibDetail.compontentSummary.values()) {
-        let compontentName = rawCompontentDetail.name;
-        let compontentUseDetail: TypeCompontentUsed = {
-          compontentName: compontentName,
+      for (let rawComponentDetail of rawUiLibDetail.componentSummary.values()) {
+        let componentName = rawComponentDetail.name;
+        let componentUseDetail: TypeComponentUsed = {
+          componentName: componentName,
           useCount: 0,
           fileUriMap: new Map(),
         };
-        if (storeItem.compontentMap.has(compontentName)) {
-          compontentUseDetail = storeItem.compontentMap.get(compontentName);
+        if (storeItem.componentMap.has(componentName)) {
+          componentUseDetail = storeItem.componentMap.get(componentName);
         }
 
         // 记录组件在文件中的使用次数
-        for (let fileUri of rawCompontentDetail.useSummary.keys()) {
-          let useCount = rawCompontentDetail.useSummary.get(fileUri);
-          let oldUseCount = compontentUseDetail.fileUriMap.get(fileUri) || 0;
-          compontentUseDetail.fileUriMap.set(fileUri, useCount + oldUseCount);
+        for (let fileUri of rawComponentDetail.useSummary.keys()) {
+          let useCount = rawComponentDetail.useSummary.get(fileUri);
+          let oldUseCount = componentUseDetail.fileUriMap.get(fileUri) || 0;
+          componentUseDetail.fileUriMap.set(fileUri, useCount + oldUseCount);
         }
-        let compontentUseCount = 0;
-        for (let subUseCount of compontentUseDetail.fileUriMap.values()) {
-          compontentUseCount += subUseCount;
+        let componentUseCount = 0;
+        for (let subUseCount of componentUseDetail.fileUriMap.values()) {
+          componentUseCount += subUseCount;
         }
-        compontentUseDetail.useCount = compontentUseCount;
-        storeItem.compontentMap.set(compontentName, compontentUseDetail);
+        componentUseDetail.useCount = componentUseCount;
+        storeItem.componentMap.set(componentName, componentUseDetail);
       }
       // 更新store内总的组件使用次数
-      let compontentTotalUseCount = 0;
-      for (let compontentUseDetail of storeItem.compontentMap.values()) {
-        compontentTotalUseCount += compontentUseDetail.useCount;
+      let componentTotalUseCount = 0;
+      for (let componentUseDetail of storeItem.componentMap.values()) {
+        componentTotalUseCount += componentUseDetail.useCount;
       }
-      storeItem.compontentUseCount = compontentTotalUseCount;
+      storeItem.componentUseCount = componentTotalUseCount;
 
       // 将数据更新回去
       this.summary.set(storeItem.libName, storeItem);
@@ -200,10 +200,10 @@ export class SummaryCollection {
         return a.count - b.count;
       });
 
-      let compontentUseList: TypeCompontentReport[] = [];
-      for (let rawCompontent of rawUiLib.compontentMap.values()) {
-        let useFileUriList: TypeCompontentReport['useFileUriList'] = [];
-        for (let fileUri of rawCompontent.fileUriMap.keys()) {
+      let componentUseList: TypeComponentReport[] = [];
+      for (let rawComponent of rawUiLib.componentMap.values()) {
+        let useFileUriList: TypeComponentReport['useFileUriList'] = [];
+        for (let fileUri of rawComponent.fileUriMap.keys()) {
           useFileUriList.push({
             uri: fileUri,
             count: rawUiLib.directUseFileUriMap.get(fileUri),
@@ -214,13 +214,13 @@ export class SummaryCollection {
           return a.count - b.count;
         });
 
-        compontentUseList.push({
-          compontentName: rawCompontent.compontentName,
-          useCount: rawCompontent.useCount,
+        componentUseList.push({
+          componentName: rawComponent.componentName,
+          useCount: rawComponent.useCount,
           useFileUriList: useFileUriList,
         });
       }
-      compontentUseList.sort((a, b) => {
+      componentUseList.sort((a, b) => {
         return a.useCount - b.useCount;
       });
 
@@ -228,14 +228,14 @@ export class SummaryCollection {
         libName: rawUiLib.libName,
         directUseCount: rawUiLib.directUseCount,
         useFileUriList: directUseFileUriList,
-        compontentDetailList: compontentUseList,
-        compontentUseCount: rawUiLib.compontentUseCount,
+        componentDetailList: componentUseList,
+        componentUseCount: rawUiLib.componentUseCount,
       };
       resultList.push(uiLib);
     }
     // 排序
     resultList.sort((a, b) => {
-      return a.compontentUseCount - b.compontentUseCount;
+      return a.componentUseCount - b.componentUseCount;
     });
     return resultList;
   }

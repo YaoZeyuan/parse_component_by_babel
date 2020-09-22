@@ -8,7 +8,7 @@ import {
 } from '@babel/types';
 import { types as babelTypes } from '@babel/core';
 import { UsedSummaryInFile } from './summary';
-import { isLegalTarget, getPackageName, getCompontentName } from './utils';
+import { isLegalTarget, getPackageName, getComponentName } from './utils';
 
 // @babel/parser中, 所有可能的type列表 => https://juejin.im/post/5bed908e6fb9a049b5066215#heading-102
 // 在 https://astexplorer.net/ 中, 选用的 babylon7解析器,  以 babelv7 作为transform, 可以预览代码实际生成的ast树
@@ -46,7 +46,7 @@ export default function (opts) {
         // 组件名前缀, 对应case
         // import { Button } from "antd/dist/lib/ButtonCollection"
         // 此时实际组件名应为: dist/lib/ButtonCollection/Button
-        let compontentNamePrefix = getCompontentName(importLibPath);
+        let componentNamePrefix = getComponentName(importLibPath);
 
         for (let element of node.specifiers) {
           // 分情况处理
@@ -58,14 +58,14 @@ export default function (opts) {
             // 对应于 * as 的情况
             // import * as antdTest from "@ali/antd";
             case 'ImportNamespaceSpecifier':
-              if (compontentNamePrefix === '') {
+              if (componentNamePrefix === '') {
                 // 后缀为空, 说明是直接导入的组件库, 新导入的名称为组件库别名
                 summaryDb.addLibAlias(packageName, element.local.name);
               } else {
                 // 否则则是从组件库中导入组件
-                // compontentNamePrefix 为实际组件名, element.local.name 为组件别名
-                // 如果 compontentNamePrefix 不存在, addCompontentAlias 会自动予以注册
-                summaryDb.addCompontentAlias(packageName, compontentNamePrefix, element.local.name);
+                // componentNamePrefix 为实际组件名, element.local.name 为组件别名
+                // 如果 componentNamePrefix 不存在, addComponentAlias 会自动予以注册
+                summaryDb.addComponentAlias(packageName, componentNamePrefix, element.local.name);
               }
               break;
             case 'ImportSpecifier':
@@ -77,14 +77,14 @@ export default function (opts) {
               // 对于 import { Button as TestButton} from "antd"
               // element.imported.name = Button
               // element.local.name = TestButton
-              let compontentName = element.imported.name;
-              if (compontentNamePrefix !== '') {
+              let componentName = element.imported.name;
+              if (componentNamePrefix !== '') {
                 // 如果前缀不为空, 需要补上组件前缀
-                compontentName = compontentNamePrefix + '/' + compontentName;
+                componentName = componentNamePrefix + '/' + componentName;
               }
               // 组件别名
-              let compontentAsName = element.local.name;
-              summaryDb.addCompontentAlias(packageName, compontentName, compontentAsName);
+              let componentAsName = element.local.name;
+              summaryDb.addComponentAlias(packageName, componentName, componentAsName);
               break;
             default:
               // 所有import情况枚举完毕
@@ -132,7 +132,7 @@ export default function (opts) {
                 let importLibPath = requireItem.value;
                 // 获取实际导入的库的名字
                 let packageName = getPackageName(importLibPath);
-                let compontentNamePrefix = getCompontentName(importLibPath);
+                let componentNamePrefix = getComponentName(importLibPath);
 
                 // 如果导入的是非js文件, 不需要处理
                 if (isLegalTarget(importLibPath) === false) {
@@ -151,7 +151,7 @@ export default function (opts) {
                 let varItem = item.id as Identifier;
 
                 let varName = varItem.name;
-                if (compontentNamePrefix === '') {
+                if (componentNamePrefix === '') {
                   // 如果前缀为空, 导入的是组件库
                   // 对应case
                   // let antd = require("antd")
@@ -160,7 +160,7 @@ export default function (opts) {
                   // 否则, 对应case
                   // let button = require("antd/lib/Button")
                   // 此时导入的实际是组件, 需要视为组件进行处理
-                  summaryDb.addCompontentAlias(packageName, compontentNamePrefix, varName);
+                  summaryDb.addComponentAlias(packageName, componentNamePrefix, varName);
                 }
               }
             }
@@ -193,10 +193,10 @@ export default function (opts) {
             let 被解构的变量名 = objectItem.name;
             let 被解构的变量名下_解构出的属性 = propertyItem.name;
 
-            let isRegistedCompontentName = summaryDb.isRegistedCompontentName(被解构的变量名);
+            let isRegistedComponentName = summaryDb.isRegistedComponentName(被解构的变量名);
             let isRegistedUiLibName = summaryDb.isRegistedLibName(被解构的变量名);
 
-            if (isRegistedCompontentName === false && isRegistedUiLibName === false) {
+            if (isRegistedComponentName === false && isRegistedUiLibName === false) {
               // 既不是注册的组件库
               // 也不是注册的组件
               // 自动跳过
@@ -207,16 +207,16 @@ export default function (opts) {
               // 被解构的是组件库
               // 则新元素为组件
               // message = antd.message
-              summaryDb.addCompontentAlias(被解构的变量名, 被解构的变量名下_解构出的属性, 解构出的新变量名);
+              summaryDb.addComponentAlias(被解构的变量名, 被解构的变量名下_解构出的属性, 解构出的新变量名);
             } else {
-              let 被解构组件隶属的_组件库名 = summaryDb.getCompontentNameBelongToLib(被解构的变量名);
+              let 被解构组件隶属的_组件库名 = summaryDb.getComponentNameBelongToLib(被解构的变量名);
               // 被解构的是组件
               // 对应于
               // SelfButton = Button.PrimaryButton
-              summaryDb.addCompontentAlias(被解构组件隶属的_组件库名, 被解构的变量名, 解构出的新变量名);
+              summaryDb.addComponentAlias(被解构组件隶属的_组件库名, 被解构的变量名, 解构出的新变量名);
 
               // 后续没有用到此处的PrimaryButton属性, 因此不需要记录
-              // summaryDb.addCompontentAlias(
+              // summaryDb.addComponentAlias(
               //   被解构组件隶属的_组件库名,
               //   被解构的变量名,
               //   被解构的变量名下_解构出的属性,
@@ -241,10 +241,10 @@ export default function (opts) {
             let 原变量名 = initItem.name;
             let 新变量名 = varItem.name;
 
-            let isRegistedCompontentName = summaryDb.isRegistedCompontentName(原变量名);
+            let isRegistedComponentName = summaryDb.isRegistedComponentName(原变量名);
             let isRegistedUiLibName = summaryDb.isRegistedLibName(原变量名);
 
-            if (isRegistedCompontentName === false && isRegistedUiLibName === false) {
+            if (isRegistedComponentName === false && isRegistedUiLibName === false) {
               // 既不是注册的组件库
               // 也不是注册的组件
               // 自动跳过
@@ -256,8 +256,8 @@ export default function (opts) {
               summaryDb.addLibAlias(原变量名, 新变量名);
             } else {
               // 重命名组件
-              let 原组件隶属的_组件库名 = summaryDb.getCompontentNameBelongToLib(原变量名);
-              summaryDb.addCompontentAlias(原组件隶属的_组件库名, 原变量名, 新变量名);
+              let 原组件隶属的_组件库名 = summaryDb.getComponentNameBelongToLib(原变量名);
+              summaryDb.addComponentAlias(原组件隶属的_组件库名, 原变量名, 新变量名);
             }
             continue;
           }
@@ -277,7 +277,7 @@ export default function (opts) {
         //    1.1 组件库  antd()
         //    1.2 组件函数  Model()
         // 2. 间接调用
-        //    2.1  组件渲染调用 React.CreateCompontent(...)
+        //    2.1  组件渲染调用 React.CreateComponent(...)
         //    2.2  组件库内函数 antd.Model()
         //    2.3  组件的子函数 Model.loading()
         //    2.4  执行结果的子函数 antd().loading() / Model().loading()
@@ -291,9 +291,9 @@ export default function (opts) {
           let calleeItemName = (calleeItem as Identifier).name;
 
           let isRegistedUiLibName = summaryDb.isRegistedLibName(calleeItemName);
-          let isRegistedCompontentName = summaryDb.isRegistedCompontentName(calleeItemName);
+          let isRegistedComponentName = summaryDb.isRegistedComponentName(calleeItemName);
 
-          if (isRegistedCompontentName === false && isRegistedUiLibName === false) {
+          if (isRegistedComponentName === false && isRegistedUiLibName === false) {
             // 未注册过, 直接返回即可
             return;
           }
@@ -302,8 +302,8 @@ export default function (opts) {
             summaryDb.incrLibUseCount(calleeItemName);
           } else {
             // 组件使用次数+1
-            let 原组件隶属的_组件库名 = summaryDb.getCompontentNameBelongToLib(calleeItemName);
-            summaryDb.incrCompontentUseCount(原组件隶属的_组件库名, calleeItemName);
+            let 原组件隶属的_组件库名 = summaryDb.getComponentNameBelongToLib(calleeItemName);
+            summaryDb.incrComponentUseCount(原组件隶属的_组件库名, calleeItemName);
           }
         } else if (babelTypes.isMemberExpression(calleeItem)) {
           // 第二种情况, 子组件作为属性进行调用
@@ -323,28 +323,28 @@ export default function (opts) {
               if (node.arguments.length > 0) {
                 // 只统计有参数的
                 // 真正被调取的元素
-                let callCompontentItem = node.arguments[0] as Identifier;
+                let callComponentItem = node.arguments[0] as Identifier;
 
-                let compontentName = callCompontentItem.name;
+                let componentName = callComponentItem.name;
                 // 此时被调取的一定是组件了
                 // 没被注册过的组件说明不是目标组件库成员, 不用考虑
-                if (summaryDb.isRegistedCompontentName(compontentName)) {
+                if (summaryDb.isRegistedComponentName(componentName)) {
                   // 该组件曾经注册过
-                  let uiLibName = summaryDb.getCompontentNameBelongToLib(compontentName);
-                  summaryDb.incrCompontentUseCount(uiLibName, compontentName);
+                  let uiLibName = summaryDb.getComponentNameBelongToLib(componentName);
+                  summaryDb.incrComponentUseCount(uiLibName, componentName);
                 }
               }
             } else {
               let isRegistedUiLibName = summaryDb.isRegistedLibName(调用对象);
-              let isRegistedCompontentName = summaryDb.isRegistedCompontentName(调用对象);
+              let isRegistedComponentName = summaryDb.isRegistedComponentName(调用对象);
               if (isRegistedUiLibName) {
                 // 作为组件库的子组件被调用
-                summaryDb.incrCompontentUseCount(调用对象, 调用方法);
+                summaryDb.incrComponentUseCount(调用对象, 调用方法);
               }
-              if (isRegistedCompontentName) {
+              if (isRegistedComponentName) {
                 // 作为组件被调用
-                let uiLibName = summaryDb.getCompontentNameBelongToLib(调用对象);
-                summaryDb.incrCompontentUseCount(uiLibName, 调用对象);
+                let uiLibName = summaryDb.getComponentNameBelongToLib(调用对象);
+                summaryDb.incrComponentUseCount(uiLibName, 调用对象);
               }
             }
             // 没有其他情况

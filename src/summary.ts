@@ -9,7 +9,7 @@ export class UsedSummaryInFile {
 
   /**
    * 基本假设
-   * 同一文件内, uiLib之间别名不会重复, 组件之间别名不会重复, (uiLib和compontent的别名可以重复)
+   * 同一文件内, uiLib之间别名不会重复, 组件之间别名不会重复, (uiLib和component的别名可以重复)
    */
   usedLib: Map<string, UsedLib> = new Map();
   /**
@@ -91,9 +91,9 @@ export class UsedSummaryInFile {
   /**
    * 向组件库中添加组件
    * @param libName
-   * @param compontentName
+   * @param componentName
    */
-  addCompontent(libName: string, compontentName: string) {
+  addComponent(libName: string, componentName: string) {
     if (this.isLibNameRegisted(libName) === false) {
       // 如果uiLib不存在, 需要先行注册
       this.addLib(libName);
@@ -102,7 +102,7 @@ export class UsedSummaryInFile {
     // 向uiLib中添加组件
     let realLibName = this.getRealLibName(libName);
     let usedLib = this.usedLib.get(realLibName);
-    usedLib.addCompontent(compontentName);
+    usedLib.addComponent(componentName);
 
     // 将结果设置回uiLibSummary
     this.usedLib.set(realLibName, usedLib);
@@ -111,10 +111,10 @@ export class UsedSummaryInFile {
   /**
    * 向组件库中添加组件库别名
    * @param libName
-   * @param compontentName
-   * @param compontentNameAlias
+   * @param componentName
+   * @param componentNameAlias
    */
-  addCompontentAlias(libName: string, compontentName: string, compontentNameAlias: string) {
+  addComponentAlias(libName: string, componentName: string, componentNameAlias: string) {
     if (this.isLibNameRegisted(libName) === false) {
       // 如果uiLib不存在, 需要先行注册
       this.addLib(libName);
@@ -123,18 +123,18 @@ export class UsedSummaryInFile {
     // 向uiLib中添加组件别名
     let realLibName = this.getRealLibName(libName);
     let libSumamry = this.usedLib.get(realLibName);
-    libSumamry.addCompontentAlias(compontentName, compontentNameAlias);
+    libSumamry.addComponentAlias(componentName, componentNameAlias);
 
     // 将结果设置回uiLibSummary
     this.usedLib.set(realLibName, libSumamry);
   }
 
   /**
-   * compontent使用数+1
+   * component使用数+1
    * @param libName
-   * @param compontentName
+   * @param componentName
    */
-  incrCompontentUseCount(libName: string, compontentName: string) {
+  incrComponentUseCount(libName: string, componentName: string) {
     if (this.isLibNameRegisted(libName) === false) {
       // 如果uiLib不存在, 需要先行注册
       this.addLib(libName);
@@ -143,7 +143,7 @@ export class UsedSummaryInFile {
     // 向uiLib中添加组件别名
     let realLibName = this.getRealLibName(libName);
     let libUsedSumamry = this.usedLib.get(realLibName);
-    libUsedSumamry.incrCompontentUseCount(compontentName, this.fileUri);
+    libUsedSumamry.incrComponentUseCount(componentName, this.fileUri);
 
     // 将结果设置回uiLibSummary
     this.usedLib.set(realLibName, libUsedSumamry);
@@ -180,9 +180,9 @@ export class UsedSummaryInFile {
    * 检查是否是注册过的组件名
    * @param targetName
    */
-  isRegistedCompontentName(targetName: string) {
+  isRegistedComponentName(targetName: string) {
     for (let uiLib of this.usedLib.values()) {
-      if (uiLib.isRegistedCompontentName(targetName) === true) {
+      if (uiLib.isRegistedComponentName(targetName) === true) {
         return true;
       }
     }
@@ -193,9 +193,9 @@ export class UsedSummaryInFile {
    * 检查是否是注册过的组件名
    * @param targetName
    */
-  getCompontentNameBelongToLib(targetName: string) {
+  getComponentNameBelongToLib(targetName: string) {
     for (let uiLib of this.usedLib.values()) {
-      if (uiLib.isRegistedCompontentName(targetName) === true) {
+      if (uiLib.isRegistedComponentName(targetName) === true) {
         return uiLib.name;
       }
     }
@@ -230,11 +230,11 @@ class UsedLib {
   directUseSummary: Map<string, number> = new Map();
 
   /**
-   * 记录compontent的别名列表, 方便查询
+   * 记录component的别名列表, 方便查询
    */
-  aliasCompontentNameMap: Map<string, string> = new Map();
+  aliasComponentNameMap: Map<string, string> = new Map();
 
-  compontentSummary: Map<string, UsedCompontent> = new Map();
+  componentSummary: Map<string, UsedComponent> = new Map();
 
   constructor(libName: string) {
     this.name = libName;
@@ -242,92 +242,92 @@ class UsedLib {
   }
 
   /**
-   * 检查compontentName是否被注册过
-   * @param compontentName
+   * 检查componentName是否被注册过
+   * @param componentName
    */
-  private isCompontentNameRegisted(compontentName: string) {
-    return this.aliasCompontentNameMap.has(compontentName);
+  private isComponentNameRegisted(componentName: string) {
+    return this.aliasComponentNameMap.has(componentName);
   }
 
   /**
    * 注册别名和原组件之间的关系
-   * @param compontentName
+   * @param componentName
    * @param aliasName
    */
-  private registCompontentNameAndAliasName(compontentName: string, aliasName: string) {
-    return this.aliasCompontentNameMap.set(aliasName, compontentName);
+  private registComponentNameAndAliasName(componentName: string, aliasName: string) {
+    return this.aliasComponentNameMap.set(aliasName, componentName);
   }
 
   /**
    * 获取组件别名实际对应的组件名
-   * @param compontentAliasName
+   * @param componentAliasName
    */
-  private getRealCompontentName(compontentAliasName: string) {
-    return this.aliasCompontentNameMap.get(compontentAliasName);
+  private getRealComponentName(componentAliasName: string) {
+    return this.aliasComponentNameMap.get(componentAliasName);
   }
 
   /**
    * 注册组件
-   * @param compontentName
+   * @param componentName
    */
-  addCompontent(compontentName: string) {
-    if (this.isCompontentNameRegisted(compontentName)) {
+  addComponent(componentName: string) {
+    if (this.isComponentNameRegisted(componentName)) {
       // 这个组件已经注册过, 自动跳过
       return;
     }
-    let compontentSummary = new UsedCompontent(compontentName);
-    this.compontentSummary.set(compontentName, compontentSummary);
-    this.registCompontentNameAndAliasName(compontentName, compontentName);
+    let componentSummary = new UsedComponent(componentName);
+    this.componentSummary.set(componentName, componentSummary);
+    this.registComponentNameAndAliasName(componentName, componentName);
     return;
   }
 
   /**
    * 注册组件别名
-   * @param compontentName 组件名(本身也可能是别名)
-   * @param compontentAliasName 组件别名
+   * @param componentName 组件名(本身也可能是别名)
+   * @param componentAliasName 组件别名
    */
-  addCompontentAlias(compontentName: string, compontentAliasName: string) {
-    if (this.isCompontentNameRegisted(compontentAliasName)) {
+  addComponentAlias(componentName: string, componentAliasName: string) {
+    if (this.isComponentNameRegisted(componentAliasName)) {
       // 别名只允许注册一次
       return;
     }
 
-    if (this.isCompontentNameRegisted(compontentName)) {
+    if (this.isComponentNameRegisted(componentName)) {
       // 组件已注册
-      // 获取compontentName对应的本名
-      let realCompontentName = this.getRealCompontentName(compontentName);
-      this.registCompontentNameAndAliasName(realCompontentName, compontentAliasName);
+      // 获取componentName对应的本名
+      let realComponentName = this.getRealComponentName(componentName);
+      this.registComponentNameAndAliasName(realComponentName, componentAliasName);
       return;
     }
 
     // 组件未注册, 先注册组件
-    this.addCompontent(compontentName);
+    this.addComponent(componentName);
     // 再注册组件别名
-    this.registCompontentNameAndAliasName(compontentName, compontentAliasName);
+    this.registComponentNameAndAliasName(componentName, componentAliasName);
     return;
   }
 
   /**
-   * compontent在fileUri中使用数+1
+   * component在fileUri中使用数+1
    *
-   * @param compontentName
+   * @param componentName
    * @param fileUri
    */
-  incrCompontentUseCount(compontentName: string, fileUri: string) {
-    this.addCompontent(compontentName);
+  incrComponentUseCount(componentName: string, fileUri: string) {
+    this.addComponent(componentName);
     // 获取组件本名
-    let realCompontentName = this.getRealCompontentName(compontentName);
+    let realComponentName = this.getRealComponentName(componentName);
 
-    let compontentSummary = this.compontentSummary.get(realCompontentName);
-    compontentSummary.incrUseCount(fileUri);
+    let componentSummary = this.componentSummary.get(realComponentName);
+    componentSummary.incrUseCount(fileUri);
     // 重新更新回去
-    this.compontentSummary.set(realCompontentName, compontentSummary);
+    this.componentSummary.set(realComponentName, componentSummary);
   }
 
   /**
    * lib在fileUri中使用数+1
    *
-   * @param compontentName
+   * @param componentName
    * @param fileUri
    */
   incrLibUseCount(fileUri: string) {
@@ -342,15 +342,15 @@ class UsedLib {
    * 检查是否是注册过的组件名
    * @param testName
    */
-  isRegistedCompontentName(testName: string) {
-    return this.isCompontentNameRegisted(testName);
+  isRegistedComponentName(testName: string) {
+    return this.isComponentNameRegisted(testName);
   }
 }
 
 /**
  * 使用的组件
  */
-class UsedCompontent {
+class UsedComponent {
   name: string;
   aliasNameSet: Set<string>;
 

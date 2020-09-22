@@ -179,7 +179,7 @@ export function getPackageName(importPath: string) {
  * 获取组件名
  * @param importPath
  */
-export function getCompontentName(importPath: string) {
+export function getComponentName(importPath: string) {
   let moduleName = getPackageName(importPath);
   let remainPath = importPath.replace(moduleName, '');
   // 去除一开始的/
