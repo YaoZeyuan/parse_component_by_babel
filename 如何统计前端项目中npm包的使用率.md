@@ -28,6 +28,8 @@ babel 是一个语言转义工具, 他通过解析 js 源文件, 将使用了新
 
 # 统计所需的数据结构
 
+@todo(yaozeyuan) 此处应该补充一张图. 可先画草稿, 然后再用 sketch 绘制. 绘图方法见[技术文章配图指南](https://draveness.me/sketch-and-sketch/)
+
 先制定数据结构.
 
 ### class UsedCompontent
@@ -55,7 +57,7 @@ babel 是一个语言转义工具, 他通过解析 js 源文件, 将使用了新
 
 ### class UsedSummaryInFile
 
-对外暴露, 记录指定文件内, 目标 npm 的使用记录
+**对外暴露**, 记录指定文件内, 目标 npm 的使用记录
 
 | 函数签名 | 功能 | 备注 |
 | --- | --- | --- |
@@ -72,7 +74,7 @@ babel 是一个语言转义工具, 他通过解析 js 源文件, 将使用了新
 
 ### class SummaryCollection
 
-对外暴露, 合并统计每个文件的 UsedSummaryInFile, 并将结果通过 toJson 输出
+**对外暴露**, 合并统计每个 `UsedSummaryInFile`, 并将结果通过 toJson 输出
 
 | 函数签名                       | 功能             | 备注                         |
 | ------------------------------ | ---------------- | ---------------------------- |
