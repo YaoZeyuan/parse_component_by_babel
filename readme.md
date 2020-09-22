@@ -44,3 +44,7 @@ node index.js \
         5.  返回`UsedSummaryInFile`
     2.  将分析结果`UsedSummaryInFile`加入`SummaryCollection`中
 4.  输出汇总结果
+
+# 项目说明文档
+
+[项目说明文档](./如何统计前端项目中npm包的使用率.md)
