@@ -2,6 +2,7 @@
 import React, { Component } from 'react';
 import { Image } from 'antd';
 import { Fetch } from 'antd';
+import DirectLogReporter from 'antd';
 import { 包装器 } from 'demoProject';
 import {
   子目录解构组件,
@@ -34,12 +35,15 @@ export class ImageItem extends Component<any, any> {
     let { 子组件标签名 } = 组件库别名;
     return (
       <div>
-        <导入后的子组件别名 props={123} />
-        <子组件别名 props={123} />
-        <子组件标签名 props={123} />
-        <子目录解构组件 props={123} />
-        <子目录直接导出组件 props={123} />
-        <Image>Hello World</Image>
+        {/* 组件库本身也可能是一个组件 */}
+        <DirectLogReporter>
+          <导入后的子组件别名 props={123} />
+          <子组件别名 props={123} />
+          <子组件标签名 props={123} />
+          <子目录解构组件 props={123} />
+          <子目录直接导出组件 props={123} />
+          <Image>Hello World</Image>
+        </DirectLogReporter>
       </div>
     );
   }

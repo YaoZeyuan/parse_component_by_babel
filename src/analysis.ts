@@ -327,8 +327,12 @@ export default function (opts) {
                 let callComponentItem = node.arguments[0] as Identifier;
 
                 let componentName = callComponentItem.name;
-                // 此时被调取的一定是组件了
-                // 没被注册过的组件说明不是目标组件库成员, 不用考虑
+                // 此时被调取的一定是组件/组件库了
+                // case1-组件库
+                if (summaryDb.isRegistedLibName(componentName)) {
+                  summaryDb.incrLibUseCount(componentName);
+                }
+                // case2-组件 没被注册过的组件说明不是目标组件库成员, 不用考虑
                 if (summaryDb.isRegistedComponentName(componentName)) {
                   // 该组件曾经注册过
                   let uiLibName = summaryDb.getComponentNameBelongToLib(componentName);
