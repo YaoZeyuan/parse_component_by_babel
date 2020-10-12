@@ -1,4 +1,5 @@
 import { UsedSummaryInFile } from './summary';
+import dayjs from 'dayjs';
 
 export type TypeLibUsed = {
   /**
@@ -78,6 +79,13 @@ export type TypeUiLibReport = {
   componentDetailList: TypeComponentReport[];
 };
 
+export type TypeFinalReport = {
+  project: string;
+  parseAtMs: number;
+  parseAt_YMDHMS: string;
+  reportList: TypeUiLibReport[];
+};
+
 /**
  * 组件使用次数
  */
@@ -100,6 +108,11 @@ export type TypeComponentReport = {
 };
 
 export class SummaryCollection {
+  protected projectName: string = '';
+  constructor(projectName: string) {
+    this.projectName = projectName;
+  }
+
   private summary: Map<string, TypeLibUsed> = new Map();
 
   /**
@@ -182,10 +195,15 @@ export class SummaryCollection {
     }
   }
 
-  public toJson(): TypeUiLibReport[] {
+  public toJson(): TypeFinalReport {
     let resultList: TypeUiLibReport[] = [];
     if (this.summary.size === 0) {
-      return resultList;
+      return {
+        project: this.projectName,
+        parseAtMs: Date.now(),
+        parseAt_YMDHMS: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+        reportList: resultList,
+      };
     }
     for (let rawUiLib of this.summary.values()) {
       let directUseFileUriList: TypeUiLibReport['useFileUriList'] = [];
@@ -227,9 +245,9 @@ export class SummaryCollection {
       let uiLib: TypeUiLibReport = {
         libName: rawUiLib.libName,
         directUseCount: rawUiLib.directUseCount,
-        useFileUriList: directUseFileUriList,
-        componentDetailList: componentUseList,
         componentUseCount: rawUiLib.componentUseCount,
+        componentDetailList: componentUseList,
+        useFileUriList: directUseFileUriList,
       };
       resultList.push(uiLib);
     }
@@ -237,6 +255,11 @@ export class SummaryCollection {
     resultList.sort((a, b) => {
       return a.componentUseCount - b.componentUseCount;
     });
-    return resultList;
+    return {
+      project: this.projectName,
+      parseAtMs: Date.now(),
+      parseAt_YMDHMS: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+      reportList: resultList,
+    };
   }
 }

@@ -25,6 +25,7 @@
     "@babel/preset-react": "^7.7.4",
     "@babel/traverse": "^7.7.4",
     "@babel/types": "^7.7.4",
+    "dayjs": "^1.9.1",
     "lodash": "^4.17.15",
     "minimist": "^1.2.5",
     "moment": "^2.24.0"
