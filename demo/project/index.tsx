@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { Component } from 'react';
 import { Image } from 'antd';
+import { Fetch } from 'antd';
 import { 包装器 } from 'demoProject';
 import {
   子目录解构组件,
@@ -19,6 +20,12 @@ export class ImageItem extends Component<any, any> {
   };
 
   render() {
+    // 神奇case展示台
+    // 这里由于赋值前由逻辑判断, 无法判断Fn具体值, 因此保守期间, 不应将Fn视为组件别名
+    const Fn_此处不应予以统计 = 'helloworld'.toUpperCase() == 'POST' ? Fetch.post : Fetch.get;
+    // 但是Fetch作为参数被函数调用, 应被视为使用, 要记录使用次数
+    Fn_此处不应予以统计.call(Fetch, {});
+
     let a = 组件库别名();
     let b = 组件库别名.子组件名();
     let c = 组件库汇总结果.汇总结果下的子函数();

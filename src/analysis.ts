@@ -313,6 +313,7 @@ export default function (opts) {
             // 在多数情况下, loading都是message下的子组件, 不需要被统计
           } else {
             // 形如antd.message()
+            // 或组件作为参数被调用 => Function.call(antd.message, "hello world")
             let objectItem = calleeItem.object as Identifier;
             let propertyItem = calleeItem.property as Identifier;
             let 调用对象 = objectItem.name;
@@ -335,6 +336,26 @@ export default function (opts) {
                 }
               }
             } else {
+              // 组件可能作为参数被调用
+              for (let arg of node.arguments) {
+                if (babelTypes.isIdentifier(arg)) {
+                  // 只处理组件/组件库作为参数被调用的情况
+                  let paramName = (arg as Identifier).name;
+
+                  let isRegistedUiLibName = summaryDb.isRegistedLibName(paramName);
+                  let isRegistedComponentName = summaryDb.isRegistedComponentName(paramName);
+                  if (isRegistedUiLibName) {
+                    // 作为组件库被直接调用
+                    summaryDb.incrLibUseCount(paramName);
+                  }
+                  if (isRegistedComponentName) {
+                    // 作为组件被调用
+                    let uiLibName = summaryDb.getComponentNameBelongToLib(paramName);
+                    summaryDb.incrComponentUseCount(uiLibName, paramName);
+                  }
+                }
+              }
+
               let isRegistedUiLibName = summaryDb.isRegistedLibName(调用对象);
               let isRegistedComponentName = summaryDb.isRegistedComponentName(调用对象);
               if (isRegistedUiLibName) {
