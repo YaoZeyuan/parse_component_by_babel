@@ -232,11 +232,14 @@ export class SummaryCollection {
         //   return a.count - b.count;
         // });
 
-        componentUseList.push({
-          componentName: rawComponent.componentName,
-          useCount: rawComponent.useCount,
-          // useFileUriList: useFileUriList,
-        });
+        // 过滤注册了组件, 但未使用的情况
+        if (rawComponent.useCount > 0) {
+          componentUseList.push({
+            componentName: rawComponent.componentName,
+            useCount: rawComponent.useCount,
+            // useFileUriList: useFileUriList,
+          });
+        }
       }
       componentUseList.sort((a, b) => {
         // 从大到小
@@ -250,7 +253,11 @@ export class SummaryCollection {
         componentDetailList: componentUseList,
         // useFileUriList: directUseFileUriList,
       };
-      resultList.push(uiLib);
+
+      // 过滤注册了组件, 但未使用的情况
+      if (rawUiLib.componentUseCount > 0 || rawUiLib.directUseCount > 0) {
+        resultList.push(uiLib);
+      }
     }
     // 排序
     resultList.sort((a, b) => {
