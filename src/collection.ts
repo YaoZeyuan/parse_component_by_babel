@@ -62,12 +62,12 @@ export type TypeUiLibReport = {
    */
   directUseCount: number;
   /**
-   * 按文件统计组件库被直接使用次数
+   *@useFileUriList 按文件统计组件库被直接使用次数
    */
-  useFileUriList: {
-    uri: string;
-    count: number;
-  }[];
+  // useFileUriList: {
+  //   uri: string;
+  //   count: number;
+  // }[];
 
   /**
    * 组件库内组件累计被使用次数
@@ -99,12 +99,12 @@ export type TypeComponentReport = {
    */
   useCount: number;
   /**
-   * 按文件统计组件被使用次数
+   * @deprecated 按文件统计组件被使用次数
    */
-  useFileUriList: {
-    uri: string;
-    count: number;
-  }[];
+  // useFileUriList: {
+  //   uri: string;
+  //   count: number;
+  // }[];
 };
 
 export class SummaryCollection {
@@ -206,40 +206,41 @@ export class SummaryCollection {
       };
     }
     for (let rawUiLib of this.summary.values()) {
-      let directUseFileUriList: TypeUiLibReport['useFileUriList'] = [];
-      for (let fileUri of rawUiLib.directUseFileUriMap.keys()) {
-        directUseFileUriList.push({
-          uri: fileUri,
-          count: rawUiLib.directUseFileUriMap.get(fileUri),
-        });
-      }
-      // 排序
-      directUseFileUriList.sort((a, b) => {
-        return a.count - b.count;
-      });
+      // let directUseFileUriList: TypeUiLibReport['useFileUriList'] = [];
+      // for (let fileUri of rawUiLib.directUseFileUriMap.keys()) {
+      //   directUseFileUriList.push({
+      //     uri: fileUri,
+      //     count: rawUiLib.directUseFileUriMap.get(fileUri),
+      //   });
+      // }
+      // // 排序
+      // directUseFileUriList.sort((a, b) => {
+      //   return a.count - b.count;
+      // });
 
       let componentUseList: TypeComponentReport[] = [];
       for (let rawComponent of rawUiLib.componentMap.values()) {
-        let useFileUriList: TypeComponentReport['useFileUriList'] = [];
-        for (let fileUri of rawComponent.fileUriMap.keys()) {
-          useFileUriList.push({
-            uri: fileUri,
-            count: rawUiLib.directUseFileUriMap.get(fileUri),
-          });
-        }
-        // 排序
-        useFileUriList.sort((a, b) => {
-          return a.count - b.count;
-        });
+        // let useFileUriList: TypeComponentReport['useFileUriList'] = [];
+        // for (let fileUri of rawComponent.fileUriMap.keys()) {
+        //   useFileUriList.push({
+        //     uri: fileUri,
+        //     count: rawUiLib.directUseFileUriMap.get(fileUri),
+        //   });
+        // }
+        // // 排序
+        // useFileUriList.sort((a, b) => {
+        //   return a.count - b.count;
+        // });
 
         componentUseList.push({
           componentName: rawComponent.componentName,
           useCount: rawComponent.useCount,
-          useFileUriList: useFileUriList,
+          // useFileUriList: useFileUriList,
         });
       }
       componentUseList.sort((a, b) => {
-        return a.useCount - b.useCount;
+        // 从大到小
+        return b.useCount - a.useCount;
       });
 
       let uiLib: TypeUiLibReport = {
@@ -247,13 +248,14 @@ export class SummaryCollection {
         directUseCount: rawUiLib.directUseCount,
         componentUseCount: rawUiLib.componentUseCount,
         componentDetailList: componentUseList,
-        useFileUriList: directUseFileUriList,
+        // useFileUriList: directUseFileUriList,
       };
       resultList.push(uiLib);
     }
     // 排序
     resultList.sort((a, b) => {
-      return a.componentUseCount - b.componentUseCount;
+      // 从大到小
+      return b.componentUseCount - a.componentUseCount;
     });
     return {
       project: this.projectName,
