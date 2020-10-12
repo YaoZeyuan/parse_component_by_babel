@@ -190,7 +190,7 @@ export class UsedSummaryInFile {
   }
 
   /**
-   * 检查是否是注册过的组件名
+   * 根据组件名, 获取其对应的uiLib名
    * @param targetName
    */
   getComponentNameBelongToLib(targetName: string) {
