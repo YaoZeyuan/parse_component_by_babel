@@ -81,7 +81,7 @@ async function asyncStartAnalyze() {
   let failedCounter = 0;
   let successCounter = 0;
   let parseFailedList = [];
-  let summaryCollection = new SummaryCollection();
+  let summaryCollection = new SummaryCollection(project_name);
 
   utils.fileLog(`准备进行解析, 共${totalFileCount}个文件`);
   // 针对每个文件进行解析
