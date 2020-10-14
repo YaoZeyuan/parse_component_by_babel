@@ -6,3 +6,6 @@ demo/output/demo.json
 demo/output/runtime.log
 .idea/
 .vscode/
+test/test_project_list/*
+test/test_project_parse_result/*
+test/node_modules
