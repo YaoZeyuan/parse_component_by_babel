@@ -84,7 +84,7 @@ export function checkParamCompleteAndInit(parse_result) {
 }
 
 /**
- * 生成项目目录下所有需要解析的文件列表
+ * 生成项目目录下所有需要解析的文件列表(不考虑100kb以上的文件)
  * @param project_uri
  */
 export function getNeedParseFileUriList(project_uri: string) {
@@ -110,6 +110,10 @@ export function getNeedParseFileUriList(project_uri: string) {
         if (stats.isFile() === false) {
           // 不考虑非文件类型
           continue;
+        }
+        if(stats.size > 100 * 1024){
+          // 不考虑100kb以上的文件
+          continue
         }
 
         //不是文件夹,检测文件后缀名, 添加到待检查列表中
