@@ -48,6 +48,13 @@ export type TypeComponentUsed = {
 
 // 汇总最终数据
 
+export type TypeFinalReport = {
+  project: string;
+  parseAtMs: number;
+  parseAt_YMDHMS: string;
+  reportList: TypeUiLibReport[];
+};
+
 /**
  * ui lib 使用次数
  */
@@ -56,6 +63,11 @@ export type TypeUiLibReport = {
    * 组件库名
    */
   libName: string;
+
+  /**
+   * 组件库内组件和直接使用组件库本身合计被使用次数
+   */
+  totalUseCount: number;
 
   /**
    * 组件库被直接使用次数
@@ -79,12 +91,6 @@ export type TypeUiLibReport = {
   componentDetailList: TypeComponentReport[];
 };
 
-export type TypeFinalReport = {
-  project: string;
-  parseAtMs: number;
-  parseAt_YMDHMS: string;
-  reportList: TypeUiLibReport[];
-};
 
 /**
  * 组件使用次数
@@ -243,11 +249,16 @@ export class SummaryCollection {
       }
       componentUseList.sort((a, b) => {
         // 从大到小
-        return b.useCount - a.useCount;
+        if(b.useCount !== a.useCount ){
+          return b.useCount - a.useCount
+        }
+        // 使用数相同, 则按a-z字母序排列
+        return b.componentName < a.componentName ? 1:-1
       });
 
       let uiLib: TypeUiLibReport = {
         libName: rawUiLib.libName,
+        totalUseCount: rawUiLib.directUseCount + rawUiLib.componentUseCount,
         directUseCount: rawUiLib.directUseCount,
         componentUseCount: rawUiLib.componentUseCount,
         componentDetailList: componentUseList,
@@ -262,7 +273,11 @@ export class SummaryCollection {
     // 排序
     resultList.sort((a, b) => {
       // 从大到小
-      return b.componentUseCount - a.componentUseCount;
+      if(b.totalUseCount !== a.totalUseCount ){
+        return b.totalUseCount - a.totalUseCount
+      }
+      // 使用数相同, 则按a-z字母序排列
+      return b.libName < a.libName ? 1:-1
     });
     return {
       project: this.projectName,
