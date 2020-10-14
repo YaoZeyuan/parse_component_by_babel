@@ -4,3 +4,5 @@ src/*.js.map
 dist/
 demo/output/demo.json
 demo/output/runtime.log
+.idea/
+.vscode/
