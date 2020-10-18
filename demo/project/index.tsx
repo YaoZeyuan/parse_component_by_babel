@@ -1,18 +1,17 @@
 // @ts-nocheck
 import React, { Component } from 'react';
-import { Image } from 'antd';
-import { Fetch } from 'antd';
-import DirectLogReporter from 'antd';
+// 导入case
+// import-case1 : ImportDefaultSpecifier
+import case1_正常导入 from '@ali/antd';
+// import-case2 : ImportNamespaceSpecifier
+import * as case2_导入命名空间 from '@ali/antd';
+// import-case3 : ImportSpecifier
+import { 解构导入, 解构导入v2 as 子组件别名 } from '@ali/antd';
+// import-case-补 : 从子目录中导入(导入的元素均视为组件)
+import case_补_从子目录中导入 from '@ali/antd/es/button';
+
+import 组件库直接作为组件使用 from '@ali/antd';
 import { 包装器 } from 'demoProject';
-import {
-  子目录解构组件,
-  子目录解构组件v2 as 子组件别名,
-  未使用子组件,
-  导入后通过别名使用的子组件,
-} from 'demoProject/dist/子目录';
-import 子目录直接导出组件 from 'demoProject/dist/子目录';
-import 组件库别名 from 'demoProject';
-import * as 组件库汇总结果 from 'demoProject';
 
 @包装器
 export class ImageItem extends Component<any, any> {
@@ -21,29 +20,45 @@ export class ImageItem extends Component<any, any> {
   };
 
   render() {
-    // 神奇case展示台
-    // 这里由于赋值前由逻辑判断, 无法判断Fn具体值, 因此保守期间, 不应将Fn视为组件别名
-    const Fn_此处不应予以统计 = 'helloworld'.toUpperCase() == 'POST' ? Fetch.post : Fetch.get;
-    // 但是Fetch作为参数被函数调用, 应被视为使用, 要记录使用次数
-    Fn_此处不应予以统计.call(Fetch, {});
+    // variable 均存在两种case: 对组件库的重命名/对组件的重命名
+    // variable-case1-通过require导入并为变量赋值
+    const 通过require导入的组件 = require('@ali/antd');
+    // variable-case2-子属性
+    const 变量的子属性 = case1_正常导入.member;
+    // 不考虑以下花式取值情况
+    const 不考虑case1 = case1_正常导入['通过普通字符串取值']; // 可能被扩展为 '通过' + '普通字符串' + '取值', 事实上无法计算真实结果
+    const 不考虑case2 = case1_正常导入[`通过模板字符串取值`];
+    const 不考虑case3 =
+      case1_正常导入[
+        (function () {
+          return '通过函数返回值取值';
+        })()
+      ];
+    const 不考虑case4_需要通过行内三元运算符判断才能取得真实值 =
+      'helloworld'.toUpperCase() == 'POST' ? 组件库直接作为组件使用 : case_补_从子目录中导入;
+    // variable-case3-变量重命名
+    const 解构导入_重命名 = 解构导入;
 
-    let a = 组件库别名();
-    let b = 组件库别名.子组件名();
-    let c = 组件库汇总结果.汇总结果下的子函数();
-    let 导入后的子组件别名 = 导入后通过别名使用的子组件;
+    // 实质统计部分
 
-    let { 子组件标签名 } = 组件库别名;
+    // call-case1-直接调用
+    case_补_从子目录中导入();
+    // call-case2-作为参数调用
+    React.createElement(解构导入, {});
+    // call-case3-调用子属性
+    case_补_从子目录中导入.子属性();
+    // 不考虑链式调用的情况
+    // antd().Model().hello().world()
+
     return (
       <div>
         {/* 组件库本身也可能是一个组件 */}
-        <DirectLogReporter>
-          <导入后的子组件别名 props={123} />
+        <组件库直接作为组件使用>
+          <通过require导入的组件 />
           <子组件别名 props={123} />
-          <子组件标签名 props={123} />
-          <子目录解构组件 props={123} />
-          <子目录直接导出组件 props={123} />
-          <Image>Hello World</Image>
-        </DirectLogReporter>
+          <解构导入_重命名 props={123} />
+          <变量的子属性 props={123} />
+        </组件库直接作为组件使用>
       </div>
     );
   }
