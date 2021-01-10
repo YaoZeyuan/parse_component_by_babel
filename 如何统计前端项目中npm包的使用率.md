@@ -1,80 +1,45 @@
-# 如何统计前端项目中 npm 包中组件的使用率
+最近接了个需求, 需要统计公司前端项目中, 自研 npm 包的普及度&包内函数使用量. 解决过程比较有意思, 这里分享下.
 
-## 引子
+```md
+// @todo
 
-最近接到一个需求, 统计前端编写的 npm 包为研发节约的开发成本, 研究了一阵, 基于 babel 搞定了. 这里分享一下.
+1.  拉取公司所有前端项目
+2.  解析项目中每一个 js/jsx/ts/tsx 文件, 得到每个文件中引入的 npm 包列表. 匹配是否为自研 npm 包.
+    1.  若为自研 npm 包, 跟踪被导入的包内导出对象, 统计每个被导入对象的使用次数
+3.  npm 包对使用数据进行汇总. 存入数据库. 编写接口, 供前端展示
+```
 
-统计 npm 为研发节约的成本, 实际上是统计 npm 包中导出的每个成员(组件)在公司项目中使用次数----原来需要手工实现的代码, 通过使用 npm 包提供的函数就能解决. 每使用一次, 就相当于为业务方节约了一次重复开发的成本.
+![基础流程](https://cdn.jsdelivr.net/gh/YaoZeyuan/parse_component_by_babel/doc/img/基础流程.png)
 
-所以, 怎么才能统计到这些呢?
+项目的基础思路比较简单, 大致如上图所示. 对于获取所有前端项目问题, 由于我司有一套自建的公共前端打包平台, 可以直接调用平台接口拉取项目源码, 所以剩下的难点只有一个: 如何解析 js 文件, 得到目标 npm 包内导出对象的使用次数.
 
-## 语法解析
+其实方法也很简单: babel 怎么做, 我们就怎么做.
 
-一般而言, js 使用包是有规律的.
+用过 babel 的人都知道, babel 可以读取 ES6 代码, 将 js 文件整体转化为抽象语法树, 然后遍历语法树, 调用插件对代码内容进行调整, 剔除/转换语法结构, 并最终输出为 ES5 代码. 而我们需要做的, 就是编写一个插件, 在 babel 遍历语法树时, 识别目标 npm 包, 统计从包中引出的变量使用情况. 流程如下.
 
-1.  所有包都会通过 import/require 明确引入
-2.  包中的成员/组件都要先从包中明确导出
+```md
+// 需要生成图片
 
-所以, 只要我们对每一个文件
+1.  处理导入语句, 获取待监控变量列表
+    1.  数据结构: npm 包名 => 隶属于该包的一级导出变量(import {useState, useRef} from "react")
+2.  监控对导出变量的解构/重命名操作
+    1.  对由导出变量中引申出的新变量/重命名, 统一视为该变量的别名.
+3.  统计导出变量的使用次数
+    1.  作为函数使用
+    2.  作为参数使用
+```
 
-1.  遍历所有导入的 npm 包, 检查是否有目标包名
-2.  检查目标 npm 包所有导出属性的使用情况
+![解析流程](https://cdn.jsdelivr.net/gh/YaoZeyuan/parse_compontent_by_babel/doc/img/基础流程.png)
 
-就可以统计出组件的使用率.
+然后剩下的就是体力活. babel 解析出的所有语法树节点类型都在`babel-types`包中. 剩下需要做的, 就是针对包中的每一种语法结构(导入/变量解构/重命名/函数调用/...)编写处理函数, 最后将所有结果输出为一个 json. 代码比较冗长, 全文可以翻看这个[Github 项目](https://github.com/YaoZeyuan/parse_component_by_babel), 这里只展示一下用于统计的数据解构
 
-具体解析过程, 一般语言可以用字符串匹配, 但对于 JavaScript 而言, 我们有更好的解决方案: babel.
+### 公共变量
 
-babel 是一个语言转义工具, 他通过解析 js 源文件, 将使用了新语法的 js 转换为 ES5 语法. 为了实现这个功能, 他需要先解析 js, 将源码处理为抽象语法树(AST), 然后针对语法树中的每一个语法结构进行转换. 而我们需要的, 就是基于 babel 解析出的抽象语法树, 统计 npm 包的实际使用情况.
-
-# 统计所需的数据结构
-
-@todo(yaozeyuan) 此处应该补充一张图. 可先画草稿, 然后再用 sketch 绘制. 绘图方法见[技术文章配图指南](https://draveness.me/sketch-and-sketch/)
-
-先制定数据结构.
-
-### class UsedCompontent
-
-内部使用, 记录组件使用次数
-
-| 函数签名                        | 功能                        | 备注             |
-| ------------------------------- | --------------------------- | ---------------- |
-| constructor(name: string)       | 初始化组件记录              | 记录组件使用数据 |
-| addAliasName(aliasName: string) | 添加组件别名                | -                |
-| incrUseCount(fileUri: string)   | 在文件`fileUri`中使用次数+1 | -                |
-
-### class UsedLib
-
-内部使用, 记录 npm 包使用记录, 以及 npm 包内组件使用记录
-
-| 函数签名 | 功能 | 备注 |
-| --- | --- | --- |
-| constructor(libName: string) | 初始化 npm 记录 | 记录 npm 包使用数据 |
-| addComponent(componentName: string) | 登记 npm 包下的组件 | - |
-| addComponentAlias(componentName: string, componentAliasName: string) | 登记 npm 包下的组件的别名 | - |
-| incrComponentUseCount(componentName: string, fileUri: string) | 组件在文件`fileUri`中使用次数+1 | - |
-| incrLibUseCount(fileUri: string) | npm 库在文件`fileUri`中使用次数+1 | npm 包可能本身就是一个函数 |
-| isRegistedComponentName(testName: string) | 检查组件名是否在包中注册过 | - |
-
-### class UsedSummaryInFile
-
-**对外暴露**, 记录指定文件内, 目标 npm 的使用记录
-
-| 函数签名 | 功能 | 备注 |
-| --- | --- | --- |
-| constructor(fileUri: string) | 初始化文件分析记录 | 记录文件`fileUri`中的 npm 包使用数据 |
-| addLib(libName: string) | 登记 npm 包 |  |
-| addLibAlias(libName: string, aliasName: string) | 登记 npm 包的别名 |  |
-| addComponent(libName: string, componentName: string) | 登记 npm 包下组件 |  |
-| addComponentAlias(libName: string, componentName: string, componentNameAlias: string) | 登记 npm 包下组件的别名 |  |
-| incrComponentUseCount(libName: string, componentName: string) | npm 包下组件使用次数+1 |  |
-| incrLibUseCount(libName: string) | npm 包直接使用次数+1 |  |
-| isRegistedLibName(targetName: string) | 检查 npm 包名是否注册过 |  |
-| isRegistedComponentName(targetName: string) | 检查组件名是否注册过 |  |
-| getComponentNameBelongToLib(targetName: string) | 根据组件名, 查找其隶属的 npm 包名 |  |
+libList : 目标 npm 包列表
 
 ### class SummaryCollection
 
-**对外暴露**, 合并统计每个 `UsedSummaryInFile`, 并将结果通过 toJson 输出
+针对每个项目创建一个`SummaryCollection`对象. 调用 add 方法登记每个文件的解析结果
 
 | 函数签名                       | 功能             | 备注                         |
 | ------------------------------ | ---------------- | ---------------------------- |
@@ -82,35 +47,42 @@ babel 是一个语言转义工具, 他通过解析 js 源文件, 将使用了新
 | add(target: UsedSummaryInFile) | 添加文件分析数据 |                              |
 | toJson(): TypeUiLibReport[]    | 输出汇总结果     |                              |
 
-# 流程图
+### class UsedSummaryInFile
 
-## 系统运行
+针对单个 js 文件, 统计目标 npm 的使用记录
 
-1.  任务启动
-    1.  项目名
-    2.  项目代码所在目录
-    3.  需要统计解析的 npm 包列表
-    4.  日志输出地址
-    5.  结果输出地址
-2.  遍历项目目录, 获取待解析的 js 文件路径列表
-3.  针对每一个 js 文件进行解析, 结果传入公共记录变量中
-4.  将结果集合输出为 json 结果
-5.  后续处理
+| 函数签名 | 功能 | 备注 |
+| --- | --- | --- |
+| constructor(fileUri: string) | 初始化文件分析记录 | 记录文件`fileUri`中的 npm 包使用数据 |
+| addLib(libName: string) | 发现目标 npm 后, 登记 npm 包名 |  |
+| addLibAlias(libName: string, aliasName: string) | 登记目标 npm 包的别名 |  |
+| addComponent(libName: string, componentName: string) | 登记目标 npm 包下组件 |  |
+| addComponentAlias(libName: string, componentName: string, componentNameAlias: string) | 登记目标 npm 包下组件的别名 |  |
+| incrComponentUseCount(libName: string, componentName: string) | npm 包下组件使用次数+1 |  |
+| incrLibUseCount(libName: string) | npm 包直接使用次数+1 |  |
+| isRegistedLibName(targetName: string) | 检查是否登记过该 npm 包 |  |
+| isRegistedComponentName(targetName: string) | 检查是否登记过该组件 |  |
+| getComponentNameBelongToLib(targetName: string) | 根据组件名, 查找其隶属的 npm 包名 |  |
 
-## 代码解析
+### class UsedCompontent
 
-1.  使用 babel & 各类插件, 将代码转换为 es5 模式, 去除装饰器/jsx/解构赋值 等难于统计的语法
-2.  将转换后 es5 代码解析为抽象语法树, 进行遍历
-    1.  遍历的顺序是什么?
-3.  遍历过程
-    1.  上面这段代码，Babel 在编译的时候会深度遍历 AST 对象的每一个节点，采用访问者的模式，每个节点都会去访问插件定义的方法，如果类型和方法中定义的类型匹配上了，就进入该方法修改节点中对应属性。在节点遍历完成后，新的 AST 对象也就生成了。babel-types 提供 AST 树节点类型对象。via [前端工程师的自我修养-关于 Babel 那些事儿](https://www.zoo.team/article/babel-2)
-    2.  注册的访问者
-        1.  导入语句
-            1.  检查变量名是否由目标组件库引入
-                1.  是 => 将变量名加入组件名/组件库名中
-        2.  变量声明
-            1.  对所有由组件库中引入的变量名/变量别名, 记录其别名
-        3.  函数调用
-            1.  针对以下情况, 使用数+1
-                1.  作为函数使用
-                2.  作为函数参数使用
+记录组件使用次数
+
+| 函数签名                        | 功能                                        | 备注             |
+| ------------------------------- | ------------------------------------------- | ---------------- |
+| constructor(name: string)       | 初始化组件记录对象, name 为被统计组件的名字 | 记录组件使用数据 |
+| addAliasName(aliasName: string) | 登记组件别名                                | -                |
+| incrUseCount(fileUri: string)   | 在文件`fileUri`中使用次数+1                 | -                |
+
+### class UsedLib
+
+记录 npm 包使用记录, 以及 npm 包内组件使用记录
+
+| 函数签名 | 功能 | 备注 |
+| --- | --- | --- |
+| constructor(libName: string) | 初始化 npm 记录, npm 包名为`libName` | 记录 npm 包使用数据 |
+| addComponent(componentName: string) | 登记 `libName` 包中的组件 | - |
+| addComponentAlias(componentName: string, componentAliasName: string) | 登记 `libName` 包中组件的别名 | - |
+| incrComponentUseCount(componentName: string, fileUri: string) | 组件在文件`fileUri`中使用次数+1 | - |
+| incrLibUseCount(fileUri: string) | npm 库在文件`fileUri`中使用次数+1 | npm 包可能本身就是一个函数 |
+| isRegistedComponentName(testComponentName: string) | 检查组件名`testComponentName`是否在`libName`包中注册过 | - |
