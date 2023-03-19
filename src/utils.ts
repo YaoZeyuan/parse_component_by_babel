@@ -12,7 +12,7 @@ let init_argv = {
 };
 
 // 需要检测的文件类型
-const Include_File_Type = ['js', 'jsx', 'ts', 'tsx'];
+const Include_File_Type = ['js', 'jsx', 'ts', 'tsx', 'vue'];
 
 // 排除的文件路径
 const Exculde_Path = ['node_modules'];
