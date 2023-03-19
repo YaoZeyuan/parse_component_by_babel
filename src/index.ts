@@ -6,6 +6,7 @@ import minimist from 'minimist';
 import * as utils from './utils';
 import { UsedSummaryInFile } from './summary';
 import {  SummaryCollection } from './collection';
+const compiler = require('vue-template-compiler');
 let babel = require('@babel/core');
 
 function transformCode2ES5(filename: string, content: string) {
@@ -30,9 +31,16 @@ function transformCode2ES5(filename: string, content: string) {
  * @param libList
  */
 async function asyncParseFile(fileUri: string, libList: string[]) {
-  const fileContent = fs.readFileSync(fileUri, { encoding: 'utf8' });
+  let fileContent = fs.readFileSync(fileUri, { encoding: 'utf8' });
   const parseResult = path.parse(fileUri);
   const filename = parseResult.base;
+  // 提取vue文件的script部分进行解析
+  if (filename.endsWith('.vue')) {
+    const result = compiler.parseComponent(fileContent);
+    if (result.script?.content) {
+      fileContent = result.script.content;
+    }
+  }
   // 首先将ts/jsx/es6代码转译成标准es5代码
   let es5Code = transformCode2ES5(filename, fileContent);
   // 然后使用自定义插件, 对转义后代码进行解析
